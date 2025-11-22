@@ -1,11 +1,8 @@
-import React from 'react';
 import './App.css';
-import TurretShooter from "./TurretShooter";
+import TurretShooter from './NetworkDefenseGame';
 
 function App() {
-  return (
-    <TurretShooter/>
-  );
+  return <TurretShooter />;
 }
 
 export default App;
