@@ -1,5 +1,5 @@
 import { Button } from '@/components/ui/button';
-import { WifiOff, Trophy, RotateCw, AlertCircle } from 'lucide-react';
+import { WifiOff, Trophy, RotateCw } from 'lucide-react';
 import type { FC } from 'react';
 
 type GameOverModalProps = {
@@ -10,31 +10,36 @@ type GameOverModalProps = {
 const GameOverModal: FC<GameOverModalProps> = ({ score, onRestart }) => {
   return (
     <div
-      className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center z-50"
+      className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50"
       onClick={onRestart}
     >
       <div
-        className="bg-slate-900 rounded-xl border border-slate-700 shadow-2xl p-8 max-w-md w-full mx-4 flex flex-col items-center gap-6"
+        className="bg-slate-900 border border-slate-700 rounded-xl shadow-xl max-w-md w-full mx-4 p-6 flex flex-col items-center gap-6"
         onClick={(e) => e.stopPropagation()}
       >
-        <WifiOff className="w-12 h-12 text-rose-500 animate-pulse" />
-        <h2 className="text-4xl font-extrabold text-rose-500 mb-2 text-center">Game Over</h2>
+        <div className="bg-rose-600/10 rounded-full p-4 flex items-center justify-center">
+          <WifiOff className="w-10 h-10 text-rose-500" />
+        </div>
 
-        <div className="bg-slate-950 border border-slate-700 rounded-lg py-4 px-8 mb-6 text-center flex flex-col items-center gap-2">
-          <p className="text-md text-slate-400 flex items-center gap-1">
+        <h2 className="text-2xl md:text-3xl font-semibold text-rose-500 text-center">Game Over</h2>
+
+        <div className="bg-slate-950 border border-slate-700 rounded-lg py-4 px-6 flex flex-col items-center gap-1 w-full text-center">
+          <div className="flex items-center gap-2 text-slate-400 font-medium">
             <Trophy className="w-4 h-4 text-amber-400" />
-            Final Score
-          </p>
-          <p className="text-3xl font-bold text-amber-400">{score}</p>
+            <span>Final Score</span>
+          </div>
+          <span className="text-2xl font-bold text-amber-400">{score}</span>
         </div>
 
         <Button
           onClick={onRestart}
-          className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-blue-600 to-blue-600 hover:from-blue-500 hover:to-blue-600 text-white font-semibold"
+          className="w-full flex items-center justify-center gap-2 bg-slate-800 hover:bg-slate-700 text-white font-semibold py-3 rounded-lg shadow-sm transition-colors"
         >
           <RotateCw className="w-4 h-4" />
           Restart Game
         </Button>
+
+        <p className="text-xs text-slate-400 text-center mt-2">Take a deep breath and try again!</p>
       </div>
     </div>
   );
