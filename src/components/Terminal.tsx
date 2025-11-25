@@ -1,6 +1,7 @@
 import type { RefObject, FormEvent, KeyboardEvent } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
+import { Terminal as TerminalIcon } from 'lucide-react';
 
 interface ConsoleTerminalProps {
   consoleHistory: Array<{ type: 'command' | 'output' | 'error'; text: string }>;
@@ -24,9 +25,15 @@ export default function Terminal({
       className="flex-1 bg-slate-900/95 border-slate-700/50 shadow-xl backdrop-blur-sm font-mono flex flex-col"
       style={{ height: 650 }}
     >
-      <CardHeader className="pb-2 border-b border-slate-700/50">
-        <CardTitle className="flex items-center gap-2 text-slate-200 text-xs">
-          <span className="text-slate-400">root@firewall:~#</span>
+      <CardHeader className="py-2 border-b bg-slate-800 rounded-t-md border-slate-700/50">
+        <CardTitle className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <TerminalIcon className="w-4 h-4 text-cyan-400" />
+            <span className="text-xs font-bold text-slate-200 uppercase tracking-wide">
+              Controls
+            </span>
+          </div>
+          <span className="text-xs text-slate-400 font-mono">root@firewall:~#</span>
         </CardTitle>
       </CardHeader>
       <CardContent className="pt-3 flex-1 flex flex-col overflow-hidden">

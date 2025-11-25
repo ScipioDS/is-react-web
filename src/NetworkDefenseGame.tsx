@@ -1,19 +1,26 @@
 import React, { useEffect, useRef, useState } from 'react';
 import Phaser from 'phaser';
-import GameHeader from '@/components/GameHeader';
-import Terminal from '@/components/ConsoleTerminal';
-import GameCanvas from '@/components/GameCanvas';
+import Navbar from '@/components/Navbar';
+import Terminal from '@/components/Terminal';
+import GameCanvas from '@/components/Canvas';
 import InstructionsModal from '@/components/InstructionsModal';
+import GameOverModal from './components/GameOverModal';
 
 type FirewallRule = {
   blockedIp: string | null;
 };
 
 function destroyPacket(packet: Phaser.GameObjects.Container) {
+  console.log('destroyPacket called');
   packet.list.forEach((obj: any) => obj.destroy?.());
   const bodySprite = packet.getData('bodySprite') as Phaser.Physics.Arcade.Sprite;
-  if (bodySprite) bodySprite.destroy();
+  console.log('bodySprite:', bodySprite);
+  if (bodySprite) {
+    bodySprite.destroy();
+    console.log('bodySprite destroyed');
+  }
   packet.destroy();
+  console.log('packet container destroyed');
 }
 
 class MainScene extends Phaser.Scene {
@@ -49,24 +56,50 @@ class MainScene extends Phaser.Scene {
 
     this.add.rectangle(325, 510, 280, 50, 0x2c3e50);
     this.add.ellipse(325, 535, 280, 30, 0x1c364d, 1);
+
     this.router = this.add.ellipse(325, 485, 280, 30, 0x294e6e, 1).setStrokeStyle(2, 0x7f8c8d);
+
+    const routerBody = this.add.rectangle(325, 510, 280, 60, 0x000000, 0);
+    this.physics.add.existing(routerBody, true);
 
     this.packetGroup = this.physics.add.group();
 
-    this.physics.add.overlap(this.packetGroup, this.router, (packetObj: any) => {
-      const packet = packetObj as Phaser.GameObjects.Container;
-      const ip = packet.getData('ip') as string;
-      const routeIndex = packet.getData('route') as number;
-      const rule = this.firewallRules[routeIndex];
-      if (rule && rule.blockedIp && rule.blockedIp === ip) {
-        destroyPacket(packet);
-        (this.scene as any).events.emit('packetBlocked', ip);
+    this.physics.add.overlap(this.packetGroup, routerBody, (obj1: any, obj2: any) => {
+      console.log('COLLISION DETECTED!');
+
+      const bodySprite = (obj1.type === 'Sprite' ? obj1 : obj2) as Phaser.Physics.Arcade.Sprite;
+      console.log('bodySprite type:', bodySprite.type, bodySprite.constructor.name);
+
+      const packet = bodySprite.getData('parentContainer') as Phaser.GameObjects.Container;
+      console.log('Retrieved packet:', packet);
+
+      if (!packet) {
+        console.log('No packet container found');
         return;
       }
-      destroyPacket(packet);
-      (this.scene as any).events.emit('packetDelivered', ip);
-    });
 
+      const ip = packet.getData('ip');
+      const routeIndex = packet.getData('route');
+      const rule = this.firewallRules[routeIndex];
+      const isMalicious = packet.getData('malicious');
+      console.log('Collision details:', { ip, isMalicious, hasRule: !!rule });
+
+      if (rule && rule.blockedIp === ip) {
+        console.log('Packet blocked by firewall');
+        destroyPacket(packet);
+        this.events.emit('packetBlocked', ip);
+        return;
+      }
+
+      destroyPacket(packet);
+      console.log('Packet reached router:', { ip, isMalicious });
+      if (isMalicious) {
+        console.log('Emitting packetDelivered with malicious=true');
+        this.events.emit('packetDelivered', ip, true);
+      } else {
+        this.events.emit('packetSafe', ip);
+      }
+    }); // Spawn packets loop
     this.spawnTimer = this.time.addEvent({
       delay: 2000,
       callback: this.spawnPacket,
@@ -78,7 +111,8 @@ class MainScene extends Phaser.Scene {
       const container = obj as Phaser.GameObjects.Container;
       if (!container) return;
       const ip = container.getData('ip') as string;
-      (this.scene as any).events.emit('packetClicked', ip);
+      if (!ip) return;
+      this.events.emit('packetClicked', ip);
     });
 
     this.events.on('update', this.checkFirewallCollisions, this);
@@ -86,11 +120,21 @@ class MainScene extends Phaser.Scene {
 
   update(_time: number, _delta: number) {
     this.packetGroup?.getChildren().forEach((child) => {
-      const packet = child as Phaser.GameObjects.Container;
-      const body = packet.getData('bodySprite') as Phaser.Physics.Arcade.Sprite;
-      body.setVelocity(0, 40);
-      packet.y = body.y;
-      packet.x = body.x;
+      const body = child as Phaser.Physics.Arcade.Sprite;
+      body.setVelocityY(40);
+      const packet = body.getData('parentContainer') as Phaser.GameObjects.Container;
+      if (packet) {
+        packet.x = body.x;
+        packet.y = body.y;
+
+        if (body.y > 500 && body.y < 520) {
+          console.log('Packet near router:', {
+            y: body.y,
+            bodyWidth: body.body?.width,
+            bodyHeight: body.body?.height,
+          });
+        }
+      }
     });
   }
 
@@ -100,12 +144,14 @@ class MainScene extends Phaser.Scene {
     const toDestroy: Phaser.GameObjects.Container[] = [];
 
     this.packetGroup.children.each((child) => {
-      const packet = child as Phaser.GameObjects.Container;
-      if (!packet.active) return true;
+      const bodySprite = child as Phaser.Physics.Arcade.Sprite;
+      const packet = bodySprite.getData('parentContainer') as Phaser.GameObjects.Container;
+      if (!packet || !packet.active) return true;
 
       const routeIndex = packet.getData('route') as number;
       const firewall = this.firewalls[routeIndex];
       const rule = this.firewallRules[routeIndex];
+      const isMalicious = packet.getData('malicious') as boolean;
 
       if (firewall && rule?.blockedIp) {
         const fx = firewall.x;
@@ -117,6 +163,9 @@ class MainScene extends Phaser.Scene {
             toDestroy.push(packet);
             if (this.events) {
               this.events.emit('packetBlocked', ip);
+              if (isMalicious) {
+                this.events.emit('packetBlockedMalicious', ip);
+              }
             }
           }
         }
@@ -134,14 +183,28 @@ class MainScene extends Phaser.Scene {
     const startY = -20;
 
     const currentTargetIp = this.targetIp;
-    const isMalicious = Math.random() < 1 / 3;
+    const isMalicious = Math.random() < 1 / 4;
     const ip = isMalicious ? currentTargetIp : generateRandomIp();
     const isTargetIp = ip === currentTargetIp;
     const textColor = isTargetIp ? '#ff0000' : '#00ff00';
+    const boxColor = isTargetIp ? 0x660000 : 0x006600;
+    const boxColorLight = isTargetIp ? 0x990000 : 0x009900;
 
     const container = this.add.container(startX, startY);
-    const packetBox = this.add.rectangle(0, 0, 24, 24, 0x333333).setStrokeStyle(2, 0x666666);
+
+    const packetShadow = this.add.rectangle(2, 2, 24, 24, 0x000000, 0.3);
+    const packetBack = this.add.rectangle(1, 1, 24, 24, boxColor);
+    const packetBox = this.add
+      .rectangle(0, 0, 24, 24, boxColorLight)
+      .setStrokeStyle(2, 0xffffff, 0.3);
+
+    container.add(packetShadow);
+    container.add(packetBack);
     container.add(packetBox);
+
+    container.setSize(24, 24);
+    container.setInteractive();
+    this.input.setDraggable(container, false);
 
     const ipText = this.add
       .text(0, -28, ip, { fontSize: '12px', color: textColor, fontStyle: 'bold' })
@@ -149,17 +212,15 @@ class MainScene extends Phaser.Scene {
     container.add(ipText);
 
     const bodySprite = this.physics.add.sprite(startX, startY, '');
+    bodySprite.setDisplaySize(24, 24);
+    bodySprite.body.setSize(24, 24);
+    bodySprite.setData('parentContainer', container);
     container.setData('bodySprite', bodySprite);
     container.setData('ip', ip);
     container.setData('route', route);
     container.setData('malicious', ip === currentTargetIp);
 
-    container.update = () => {
-      container.x = bodySprite.x;
-      container.y = bodySprite.y;
-    };
-
-    this.packetGroup?.add(container as any);
+    this.packetGroup?.add(bodySprite);
   }
 }
 
@@ -170,7 +231,7 @@ function generateRandomIp() {
   )}.${Phaser.Math.Between(1, 254)}`;
 }
 
-export default function NetworkDefenseGame() {
+const NetworkDefenseGame = () => {
   const gameRef = useRef<HTMLDivElement | null>(null);
   const phaserRef = useRef<Phaser.Game | null>(null);
   const consoleEndRef = useRef<HTMLDivElement | null>(null);
@@ -187,10 +248,11 @@ export default function NetworkDefenseGame() {
     { type: 'output', text: 'Type "help" for available commands' },
   ]);
   const [showInstructions, setShowInstructions] = useState<boolean>(false);
+  const [gameOver, setGameOver] = useState(false);
 
   useEffect(() => {
     const scheduleNextChange = () => {
-      const delay = (5 + Math.random() * 10) * 1000;
+      const delay = (8 + Math.random() * 15) * 1000;
       return setTimeout(() => {
         const newIp = generateRandomIp();
         setTargetIp(newIp);
@@ -239,27 +301,37 @@ export default function NetworkDefenseGame() {
         setScore((s) => s + 1);
       };
 
-      const onPacketDelivered = () => {
+      const onPacketDelivered = (ip: string, isMalicious: boolean) => {
+        console.log('onPacketDelivered called:', { ip, isMalicious });
+        if (!isMalicious) return;
+        console.log('Health before:', health);
         setHealth((h) => {
+          console.log('setHealth callback, current health:', h);
           const nh = h - 1;
+
           if (nh <= 0) {
-            alert('Router has been compromised — Game Over\nYour score: ' + score);
-            window.location.reload();
+            phaserRef.current?.destroy(true);
+            phaserRef.current = null;
+
+            setGameOver(true);
           }
+
           return nh;
         });
       };
 
       const onPacketClicked = (ip: string) => {
-        setConsoleInput(`firewall route1 ${ip}`);
+        setConsoleInput((prev) => prev + ' ' + ip.trim());
       };
 
       const waitForScene = setInterval(() => {
         const s = phaserRef.current?.scene.getScene('MainScene') as any | null;
         if (s) {
           s.events.on('packetBlocked', onPacketBlocked);
-          s.events.on('packetDelivered', onPacketDelivered);
           s.events.on('packetClicked', onPacketClicked);
+          s.events.on('packetDelivered', (ip: string, isMalicious: boolean) =>
+            onPacketDelivered(ip, isMalicious),
+          );
           clearInterval(waitForScene);
         }
       }, 100);
@@ -276,6 +348,73 @@ export default function NetworkDefenseGame() {
       clearTimeout(timer);
     };
   }, []);
+
+  function restartGame() {
+    setGameOver(false);
+    setHealth(10);
+    setScore(0);
+    setConsoleHistory([
+      { type: 'output', text: 'Network Defense Firewall Control System v1.0' },
+      { type: 'output', text: 'Type "help" for available commands' },
+    ]);
+
+    const newIp = generateRandomIp();
+    setTargetIp(newIp);
+
+    setTimeout(() => {
+      if (!gameRef.current) return;
+
+      const config: Phaser.Types.Core.GameConfig = {
+        type: Phaser.AUTO,
+        width: 550,
+        height: 550,
+        parent: gameRef.current,
+        physics: { default: 'arcade', arcade: { gravity: { x: 0, y: 0 }, debug: false } },
+        scene: new MainScene(newIp),
+        backgroundColor: '#041028',
+        scale: { mode: Phaser.Scale.RESIZE, width: '100%', height: '100%' },
+      };
+
+      phaserRef.current = new Phaser.Game(config);
+
+      const onPacketBlocked = () => {
+        setScore((s) => s + 1);
+      };
+
+      const onPacketDelivered = (_ip: string, isMalicious: boolean) => {
+        if (!isMalicious) return;
+        setHealth((h) => {
+          const nh = h - 1;
+          if (nh <= 0) {
+            phaserRef.current?.destroy(true);
+            phaserRef.current = null;
+            setGameOver(true);
+          }
+          return nh;
+        });
+      };
+
+      const onPacketClicked = (ip: string) => {
+        setConsoleInput((prev) => {
+          const trimmed = prev.trim();
+          if (trimmed === '') {
+            return `firewall route1 ${ip}`;
+          }
+          return `${trimmed} ${ip}`;
+        });
+      };
+
+      const waitForScene = setInterval(() => {
+        const s = phaserRef.current?.scene.getScene('MainScene') as any | null;
+        if (s) {
+          s.events.on('packetBlocked', onPacketBlocked);
+          s.events.on('packetClicked', onPacketClicked);
+          s.events.on('packetDelivered', onPacketDelivered);
+          clearInterval(waitForScene);
+        }
+      }, 100);
+    }, 50);
+  }
 
   function executeCommand(cmd: string) {
     const trimmed = cmd.trim();
@@ -432,26 +571,20 @@ export default function NetworkDefenseGame() {
     consoleEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [consoleHistory]);
 
-  function newTarget() {
-    const ip = generateRandomIp();
-    setTargetIp(ip);
-  }
-
   return (
-    <div className="h-screen w-screen flex items-center justify-center bg-gradient-to-br from-slate-950 via-blue-950 to-slate-950 overflow-hidden p-4">
-      <div
-        className="flex flex-col gap-3 w-full h-full"
-        style={{ maxWidth: '1400px', maxHeight: '90vh' }}
-      >
-        <GameHeader
-          targetIp={targetIp}
-          score={score}
-          health={health}
-          onNewTarget={newTarget}
-          onShowInstructions={() => setShowInstructions(true)}
-        />
+    <div className="h-screen w-screen flex flex-col bg-linear-to-br from-gray-900 via-black to-gray-900 overflow-hidden">
+      <Navbar
+        targetIp={targetIp}
+        score={score}
+        health={health}
+        onShowInstructions={() => setShowInstructions(true)}
+      />
 
-        <div className="flex-1 flex gap-3 items-start">
+      <div className="flex-1 flex items-center justify-center p-4">
+        <div
+          className="flex gap-3 items-start w-full h-full"
+          style={{ maxWidth: '1400px', maxHeight: 'calc(100vh - 80px)' }}
+        >
           <Terminal
             consoleHistory={consoleHistory}
             consoleInput={consoleInput}
@@ -465,7 +598,10 @@ export default function NetworkDefenseGame() {
         </div>
       </div>
 
+      {gameOver && <GameOverModal score={score} onRestart={restartGame} />}
       {showInstructions && <InstructionsModal onClose={() => setShowInstructions(false)} />}
     </div>
   );
-}
+};
+
+export default NetworkDefenseGame;

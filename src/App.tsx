@@ -1,8 +1,8 @@
 import './App.css';
-import TurretShooter from './NetworkDefenseGame';
+import NetworkDefense from './NetworkDefenseGame';
 
 function App() {
-  return <TurretShooter />;
+  return <NetworkDefense />;
 }
 
 export default App;
