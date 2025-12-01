@@ -1,26 +1,32 @@
 import React, { useEffect, useRef } from 'react';
-import {QuizPopup} from "./QuizPopup";
+import { QuizPopup } from "./QuizPopup";
+import { RewardPopup } from "./RewardPopup";
 import Phaser from 'phaser';
 
 const TowerDefenseGame = () => {
     const gameRef = useRef(null);
     const phaserGameRef = useRef(null);
     const [showQuiz, setShowQuiz] = React.useState(false);
+    const [showReward, setShowReward] = React.useState(false);
     const [quizQuestion, setQuizQuestion] = React.useState("Is Phaser great for game development?");
+    const [availableRewards, setAvailableRewards] = React.useState<string[]>([]);
     const [paused, setPaused] = React.useState(false);
 
     const togglePause = () => {
         if (!phaserGameRef.current) return;
-
         const scene = phaserGameRef.current.scene.keys["GameScene"];
-
         if (paused) {
             scene.scene.resume();
         } else {
             scene.scene.pause();
         }
-
         setPaused(!paused);
+    };
+
+    const selectRandomRewards = (): string[] => {
+        const allRewards = ['faster_autofire', 'powerful_attack', 'health_boost', 'area_attack_radius', 'area_attack_power'];
+        const shuffled = allRewards.sort(() => Math.random() - 0.5);
+        return shuffled.slice(0, 2);
     };
 
     const handleQuizAnswer = (answer: any) => {
@@ -28,17 +34,58 @@ const TowerDefenseGame = () => {
 
         if (phaserGameRef.current) {
             const scene: any = phaserGameRef.current.scene.keys["GameScene"];
-            scene.scene.resume();
-            scene.quizShown = false; // allow another quiz later if desired
 
             if (answer) {
-                scene.score += 5; // reward for correct answer
-                scene.turretStrength += 1; // increase turret strength
+                // Correct answer - show reward selection
+                const rewards = selectRandomRewards();
+                setAvailableRewards(rewards);
+                setShowReward(true);
+                // Keep game paused while selecting reward
+            } else {
+                // Wrong answer - resume game immediately
+                scene.scene.resume();
+                scene.quizShown = false;
+                setPaused(false);
             }
         }
 
-        setPaused(false);
         console.log("Quiz answer:", answer);
+    };
+
+    const handleRewardSelect = (reward: string) => {
+        setShowReward(false);
+
+        if (phaserGameRef.current) {
+            const scene: any = phaserGameRef.current.scene.keys["GameScene"];
+
+            // Apply reward effects
+            switch (reward) {
+                case 'faster_autofire':
+                    scene.autoShootDelay = Math.max(100, scene.autoShootDelay * 0.6);
+                    console.log("Reward: Faster Autofire! New delay:", scene.autoShootDelay);
+                    break;
+                case 'powerful_attack':
+                    scene.turretStrength *= 2;
+                    console.log("Reward: Powerful Attack! Turret strength:", scene.turretStrength);
+                    break;
+                case 'health_boost':
+                    scene.health = Math.min(scene.health + 1, 10);
+                    console.log("Reward: Health Boost! Health:", scene.health);
+                    break;
+                case 'area_attack_radius':
+                    scene.areaAttackRadius = Math.min(scene.areaAttackRadius + 30, 200);
+                    console.log("Reward: Area Attack Radius+! New radius:", scene.areaAttackRadius);
+                    break;
+                case 'area_attack_power':
+                    scene.areaAttackPower += 1;
+                    console.log("Reward: Area Attack Power+! New power:", scene.areaAttackPower);
+                    break;
+            }
+
+            scene.scene.resume();
+            scene.quizShown = false;
+            setPaused(false);
+        }
     };
 
     const showQuizPopup = () => {
@@ -48,8 +95,6 @@ const TowerDefenseGame = () => {
         setPaused(true);
         setShowQuiz(true);
     };
-
-
 
     useEffect(() => {
         class GameScene extends Phaser.Scene {
@@ -64,22 +109,26 @@ const TowerDefenseGame = () => {
             private quizShown: boolean
             private health: number
             private level: number
-            private progressBar: any
-            private progressBarBG: any
-            private spawnEvent: any
-            private autoShootEvent: any
-            private gameOverText: any
-            private finalScoreText: any
-            private retryButton: any
+            private progressBar: any;
+            private progressBarBG: any;
+            private spawnEvent: any;
+            private autoShootEvent: any;
+            private gameOverText: any;
+            private finalScoreText: any;
+            private retryButton: any;
             private isGameOver: boolean;
             private enemyHealth: number;
             private turretStrength: number;
+            public autoShootDelay: number; // Made public for external access
+            public areaAttackRadius: number;
+            public areaAttackPower: number;
+            public areaAttackEvent: any;
+            public areaAttacks: any;
 
             constructor() {
                 super('GameScene');
             }
 
-            // Initialize variables
             init(){
                 this.turret = null;
                 this.turretBarrel = null;
@@ -95,6 +144,9 @@ const TowerDefenseGame = () => {
                 this.enemyHealth = 3;
                 this.turretStrength = 1;
                 this.isGameOver = false;
+                this.autoShootDelay = 500; // Initial autofire delay
+                this.areaAttackRadius = 80;
+                this.areaAttackPower = 1;
             }
 
             // Preload graphics
@@ -151,12 +203,19 @@ const TowerDefenseGame = () => {
 
                 // Auto-shooting event
                 this.autoShootEvent = this.time.addEvent({
-                    delay: 500,
+                    delay: this.autoShootDelay,
                     callback: this.shootLaserAuto,
                     callbackScope: this,
                     loop: true
                 });
 
+                // Area attack event (fires every 3 seconds)
+                this.areaAttackEvent = this.time.addEvent({
+                    delay: 3000,
+                    callback: this.triggerAreaAttack,
+                    callbackScope: this,
+                    loop: true
+                });
 
                 // Check collisions
                 this.physics.add.overlap(
@@ -190,13 +249,14 @@ const TowerDefenseGame = () => {
                     }
                 });
 
-                // Stop mouse control on pointer up
                 window.addEventListener("mouseup", () => {
                     this.useMouse = false;
                     if (this.mouseShootEvent) {
                         this.mouseShootEvent.remove();
                         this.mouseShootEvent = null;
-                        this.autoShootEvent.paused = false;
+                        if (this.autoShootEvent) {
+                            this.autoShootEvent.paused = false;
+                        }
                     }
                 });
 
@@ -227,10 +287,8 @@ const TowerDefenseGame = () => {
                     .setVisible(false);
 
                 this.retryButton.on('pointerdown', () => {
-                    // Unpause stuff if needed, then restart
                     this.scene.restart();
                 });
-
             }
 
             spawnBall() {
@@ -239,19 +297,19 @@ const TowerDefenseGame = () => {
 
                 // Spawn from random side
                 switch(side) {
-                    case 0: // top
+                    case 0:
                         x = Phaser.Math.Between(0, 800);
                         y = -20;
                         break;
-                    case 1: // right
+                    case 1:
                         x = 820;
                         y = Phaser.Math.Between(0, 600);
                         break;
-                    case 2: // bottom
+                    case 2:
                         x = Phaser.Math.Between(0, 800);
                         y = 620;
                         break;
-                    case 3: // left
+                    case 3:
                         x = -20;
                         y = Phaser.Math.Between(0, 600);
                         break;
@@ -311,6 +369,66 @@ const TowerDefenseGame = () => {
                 });
             }
 
+
+            triggerAreaAttack() {
+                // Create area attack at center with transparent sphere visual
+                const areaAttack = this.add.circle(400, 300, this.areaAttackRadius, 0x6366f1, 0.2);
+                areaAttack.setStrokeStyle(3, 0x6366f1);
+
+                // Store attack data
+                areaAttack.setData('radius', this.areaAttackRadius);
+                areaAttack.setData('power', this.areaAttackPower);
+                areaAttack.setData('createdAt', this.time.now);
+
+                // Deal damage to all balls in radius
+                this.damageEnemiesInArea(400, 300, this.areaAttackRadius, this.areaAttackPower);
+
+                // Visual feedback - expand and fade out
+                this.tweens.add({
+                    targets: areaAttack,
+                    radius: this.areaAttackRadius * 1.5,
+                    alpha: 0,
+                    duration: 400,
+                    ease: 'Quad.easeOut',
+                    onComplete: () => {
+                        areaAttack.destroy();
+                    }
+                });
+            }
+
+            damageEnemiesInArea(x: number, y: number, radius: number, damage: number) {
+                const ballsArray = this.balls.getChildren();
+                ballsArray.forEach((ball: any) => {
+                    const dist = Phaser.Math.Distance.Between(x, y, ball.x, ball.y);
+                    if (dist < radius) {
+                        // Create mini explosion effect
+                        const particles = this.add.particles(ball.x, ball.y, {
+                            speed: { min: 40, max: 120 },
+                            scale: { start: 0.6, end: 0 },
+                            blendMode: 'ADD',
+                            lifespan: 250,
+                            tint: 0x6366f1,
+                            quantity: 6,
+                            emitting: false
+                        });
+                        particles.explode();
+                        this.time.delayedCall(300, () => particles.destroy());
+
+                        // Deal damage
+                        let health = ball.getData('health');
+                        health -= damage;
+
+                        if (health <= 0) {
+                            ball.destroy();
+                            this.score += 10;
+                            this.scoreText.setText('Score: ' + this.score);
+                        } else {
+                            ball.setData('health', health);
+                        }
+                    }
+                });
+            }
+
             hitBall(laser, ball) {
                 // Explosion effect
                 const particles = this.add.particles(ball.x, ball.y, {
@@ -351,13 +469,13 @@ const TowerDefenseGame = () => {
 
                     if (this.level % 10 === 0) {
                         for (let i = 0; i < 5; i++) {
-                            this.spawnBall(); // spawn 5 extra enemies
+                            this.spawnBall();
                         }
                     }
 
                     if (!this.quizShown) {
                         this.quizShown = true;
-                        showQuizPopup();       // uses closure to call React
+                        showQuizPopup();
                     }
                 }
 
@@ -394,8 +512,6 @@ const TowerDefenseGame = () => {
                     this.mouseShootEvent.remove();
                     this.mouseShootEvent = null;
                 }
-                // Optionally stop all other time events:
-                // this.time.removeAllEvents(); // careful: will remove retry delayed calls too
 
                 // Stop active velocities on groups (optional, for visual freeze)
                 this.balls.getChildren().forEach(ball => {
@@ -427,14 +543,12 @@ const TowerDefenseGame = () => {
             updateProgressBar() {
                 // Score inside the current level (0–99)
                 const scoreInsideLevel = this.score % 100;
-
                 const percent = scoreInsideLevel / 100;
 
                 this.progressBar.clear();
                 this.progressBar.fillStyle(0x00ff00, 1);
                 this.progressBar.fillRect(300, 570, 200 * percent, 20);
             }
-
         }
 
         const config = {
@@ -491,9 +605,16 @@ const TowerDefenseGame = () => {
                     onAnswer={handleQuizAnswer}
                 />
             )}
+
+            {/* Reward popup overlay */}
+            {showReward && (
+                <RewardPopup
+                    rewards={availableRewards}
+                    onSelect={handleRewardSelect}
+                />
+            )}
         </div>
     );
-
 };
 
 export default TowerDefenseGame;
