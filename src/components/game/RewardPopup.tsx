@@ -1,4 +1,5 @@
 import { Zap, Heart, Target, Sparkles, Trophy } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
@@ -7,36 +8,38 @@ interface RewardPopupProps {
   onSelect: (reward: string) => void;
 }
 
-const rewardConfig: Record<string, { icon: React.ReactNode; label: string; description: string }> =
-  {
-    faster_autofire: {
-      icon: <Zap className="w-5 h-5" />,
-      label: 'Faster Autofire',
-      description: 'Increase fire rate',
-    },
-    power_attack: {
-      icon: <Sparkles className="w-5 h-5" />,
-      label: 'Power Attack',
-      description: 'Double turret damage',
-    },
-    health_boost: {
-      icon: <Heart className="w-5 h-5" />,
-      label: 'Health Boost',
-      description: '+1 Health point',
-    },
-    area_attack_radius: {
-      icon: <Target className="w-5 h-5" />,
-      label: 'Area Radius+',
-      description: 'Larger attack area',
-    },
-    area_attack_power: {
-      icon: <Sparkles className="w-5 h-5" />,
-      label: 'Area Power+',
-      description: 'Stronger area attacks',
-    },
-  };
-
 export const RewardPopup = ({ rewards, onSelect }: RewardPopupProps) => {
+  const { t } = useTranslation();
+
+  const rewardConfig: Record<string, { icon: React.ReactNode; label: string; description: string }> =
+    {
+      faster_autofire: {
+        icon: <Zap className="w-5 h-5" />,
+        label: t('rewards.fasterAutofire'),
+        description: t('rewards.fasterAutofireDesc'),
+      },
+      power_attack: {
+        icon: <Sparkles className="w-5 h-5" />,
+        label: t('rewards.powerAttack'),
+        description: t('rewards.powerAttackDesc'),
+      },
+      health_boost: {
+        icon: <Heart className="w-5 h-5" />,
+        label: t('rewards.healthBoost'),
+        description: t('rewards.healthBoostDesc'),
+      },
+      area_attack_radius: {
+        icon: <Target className="w-5 h-5" />,
+        label: t('rewards.areaRadius'),
+        description: t('rewards.areaRadiusDesc'),
+      },
+      area_attack_power: {
+        icon: <Sparkles className="w-5 h-5" />,
+        label: t('rewards.areaPower'),
+        description: t('rewards.areaPowerDesc'),
+      },
+    };
+
   return (
     <div className="fixed inset-0 bg-background/90 backdrop-blur-sm flex items-center justify-center p-6 z-50 animate-fade-in">
       <Card className="w-full max-w-md border-game-yellow/40 bg-card/95 backdrop-blur shadow-xl animate-scale-in">
@@ -44,8 +47,8 @@ export const RewardPopup = ({ rewards, onSelect }: RewardPopupProps) => {
           <div className="mx-auto w-20 h-20 rounded-full bg-game-yellow/20 border-2 border-game-yellow/40 flex items-center justify-center mb-4">
             <Trophy className="w-10 h-10 text-game-yellow" />
           </div>
-          <CardTitle className="text-2xl font-sans font-bold text-game-yellow">Correct!</CardTitle>
-          <p className="text-muted-foreground mt-2 font-sans">Choose your reward</p>
+          <CardTitle className="text-2xl font-sans font-bold text-game-yellow">{t('rewards.correct')}</CardTitle>
+          <p className="text-muted-foreground mt-2 font-sans">{t('rewards.choose')}</p>
         </CardHeader>
 
         <CardContent className="space-y-3 pb-8">
@@ -53,7 +56,7 @@ export const RewardPopup = ({ rewards, onSelect }: RewardPopupProps) => {
             const config = rewardConfig[reward] || {
               icon: <Sparkles className="w-5 h-5" />,
               label: reward,
-              description: 'Special upgrade',
+              description: t('rewards.specialUpgrade'),
             };
 
             return (

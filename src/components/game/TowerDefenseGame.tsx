@@ -1,15 +1,20 @@
 /* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars */
+// Imports
 import React, { useEffect, useRef } from 'react';
 import { QuizPopup } from './QuizPopup';
 import { RewardPopup } from './RewardPopup';
+import { InfoDialog } from './InfoDialog';
+import { WeaponWheel } from './WeaponWheel';
+import { GameOverlay } from './GameOverlay';
+import { GameStats } from './GameStats';
+import { GameControls } from './GameControls';
+import { GameHeader } from './GameHeader';
+import { LanguageSelector } from './LanguageSelector';
 import Phaser from 'phaser';
-import { Play, Pause, RotateCcw, Shield, Heart, Trophy, Crosshair } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
+import { Card, CardContent } from '@/components/ui/card';
 
 const TowerDefenseGame = () => {
+  // Component State
   const gameRef = useRef<HTMLDivElement | null>(null);
   const phaserGameRef = useRef<any>(null);
   const [showQuiz, setShowQuiz] = React.useState(false);
@@ -19,7 +24,13 @@ const TowerDefenseGame = () => {
   const [score, setScore] = React.useState(0);
   const [health, setHealth] = React.useState(3);
   const [gameOver, setGameOver] = React.useState(false);
+  const [currentWeapon, setCurrentWeapon] = React.useState<'laser' | 'explosive' | 'melee'>(
+    'laser',
+  );
+  const [showWeaponWheel, setShowWeaponWheel] = React.useState(false);
+  const [showInfo, setShowInfo] = React.useState(false);
 
+  // Event Handlers
   const togglePause = () => {
     if (!phaserGameRef.current) return;
     const scene = phaserGameRef.current.scene.keys['GameScene'];
@@ -96,7 +107,9 @@ const TowerDefenseGame = () => {
   };
 
   useEffect(() => {
+    // Phaser GameScene Class
     class GameScene extends Phaser.Scene {
+      // Scene Properties
       turretBarrel: any;
       balls: any;
       lasers: any;
@@ -124,15 +137,21 @@ const TowerDefenseGame = () => {
       cameraSpeed = 300;
       gridGraphics: any;
       turretBase: any;
+      currentWeapon: 'laser' | 'explosive' | 'melee' = 'laser';
+      tabKey: any;
+      explosions: any;
+      meleeAttacks: any;
+      lastMeleeTime = 0;
+      meleeCooldown = 800;
 
       constructor() {
         super('GameScene');
       }
 
+      // Scene Lifecycle Methods
       preload() {}
 
       create() {
-        // Set camera bounds to allow infinite scrolling
         this.cameras.main.setBounds(-10000, -10000, 20000, 20000);
         this.physics.world.setBounds(-10000, -10000, 20000, 20000);
 
@@ -140,8 +159,6 @@ const TowerDefenseGame = () => {
         const bg = this.add.rectangle(0, 0, 20000, 20000, 0x0a0f14);
         bg.setOrigin(0.5, 0.5);
         bg.setScrollFactor(0);
-
-        // Add scattered visual elements for movement feedback
         const obstacles = this.add.group();
         for (let i = 0; i < 100; i++) {
           const x = Phaser.Math.Between(-5000, 5000);
@@ -150,27 +167,21 @@ const TowerDefenseGame = () => {
           const shape = Phaser.Math.Between(0, 2);
 
           if (shape === 0) {
-            // Rocks/debris
             const rock = this.add.circle(x, y, size, 0x1e293b, 0.6);
             obstacles.add(rock);
           } else if (shape === 1) {
-            // Square debris
             const square = this.add.rectangle(x, y, size, size, 0x334155, 0.5);
             square.rotation = Phaser.Math.FloatBetween(0, Math.PI);
             obstacles.add(square);
           } else {
-            // Triangle markers
             const triangle = this.add.triangle(x, y, 0, 0, size, 0, size / 2, size, 0x475569, 0.4);
             triangle.rotation = Phaser.Math.FloatBetween(0, Math.PI * 2);
             obstacles.add(triangle);
           }
         }
 
-        // Create grid graphics that will be redrawn each frame
         this.gridGraphics = this.add.graphics();
         this.gridGraphics.setDepth(-1);
-
-        // Center glow effect at turret position
         const centerGlow = this.add.circle(0, 0, 120, 0xeab308, 0.03);
         this.tweens.add({
           targets: centerGlow,
@@ -181,32 +192,53 @@ const TowerDefenseGame = () => {
           ease: 'Sine.easeInOut',
         });
 
-        // Turret base - stays at center (0, 0)
         this.turretBase = this.add.container(0, 0);
-        const base1 = this.add.circle(0, 0, 38, 0x1e293b);
-        const base2 = this.add.circle(0, 0, 32, 0x334155);
-        const base3 = this.add.circle(0, 0, 22, 0xeab308);
-        const base4 = this.add.circle(0, 0, 18, 0x0a0f14);
-        this.turretBase.add([base1, base2, base3, base4]);
+        const shadow = this.add.circle(0, 2, 42, 0x000000, 0.3);
+        this.turretBase.add(shadow);
 
-        // Turret barrel - cleaner
-        this.turretBarrel = this.add.rectangle(0, 0, 55, 10, 0xeab308);
+        const base1 = this.add.circle(0, 0, 40, 0x1e293b);
+        this.turretBase.add(base1);
+
+        const base2 = this.add.circle(0, 0, 34, 0x475569);
+        this.turretBase.add(base2);
+
+        const base3 = this.add.circle(0, 0, 28, 0x334155);
+        this.turretBase.add(base3);
+
+        const base4 = this.add.circle(0, 0, 22, 0xeab308);
+        this.turretBase.add(base4);
+
+        const base5 = this.add.circle(0, 0, 16, 0x0a0f14);
+        this.turretBase.add(base5);
+        const highlight = this.add.circle(-6, -6, 10, 0x64748b, 0.4);
+        this.turretBase.add(highlight);
+
+        this.turretBarrel = this.add.rectangle(0, 0, 60, 12, 0xeab308);
         this.turretBarrel.setOrigin(0, 0.5);
         this.turretBase.add(this.turretBarrel);
-
-        // Setup WASD controls
+        const barrelShadow = this.add.rectangle(0, 1, 60, 8, 0x000000, 0.3);
+        barrelShadow.setOrigin(0, 0.5);
+        this.turretBase.add(barrelShadow);
+        this.turretBase.sendToBack(barrelShadow);
         this.wasd = {
           W: this.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.W),
           A: this.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.A),
           S: this.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.S),
           D: this.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.D),
         };
-
-        // Camera follows the turret base
+        this.tabKey = this.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.TAB);
+        this.tabKey.on('down', () => {
+          setShowWeaponWheel(true);
+        });
+        this.tabKey.on('up', () => {
+          setShowWeaponWheel(false);
+        });
         this.cameras.main.startFollow(this.turretBase, true, 0.1, 0.1);
 
         this.balls = this.physics.add.group();
         this.lasers = this.physics.add.group();
+        this.explosions = this.physics.add.group();
+        this.meleeAttacks = this.physics.add.group();
 
         this.spawnEvent = this.time.addEvent({
           delay: 1500,
@@ -223,6 +255,20 @@ const TowerDefenseGame = () => {
         });
 
         this.physics.add.overlap(this.lasers, this.balls, this.hitBall, undefined as any, this);
+        this.physics.add.overlap(
+          this.explosions,
+          this.balls,
+          (rocket: any, ball: any) => {
+            this.explode(rocket.x, rocket.y);
+            const core = rocket.getData('core');
+            const trail = rocket.getData('trail');
+            if (core) core.destroy();
+            if (trail) trail.destroy();
+            rocket.destroy();
+          },
+          undefined as any,
+          this,
+        );
 
         this.input.on('pointerdown', (pointer: any) => {
           if (!this.useMouse) {
@@ -273,16 +319,20 @@ const TowerDefenseGame = () => {
             y = turretY + Phaser.Math.Between(-spawnDistance, spawnDistance);
             break;
         }
-
-        // Create enemy with cleaner design
-        const ball = this.add.circle(x, y, 16, 0xef4444);
-        const innerBall = this.add.circle(x, y, 12, 0xff6b6b);
-        const glow = this.add.circle(x, y, 24, 0xef4444, 0.25);
+        const ball = this.add.circle(x, y, 18, 0xef4444);
+        const innerBall = this.add.circle(x, y, 14, 0xff6b6b);
+        const coreBall = this.add.circle(x, y, 9, 0xff8787);
+        const highlight = this.add.circle(x - 4, y - 4, 5, 0xffa5a5, 0.7);
+        const glow = this.add.circle(x, y, 26, 0xef4444, 0.2);
+        const shadow = this.add.circle(x + 2, y + 2, 18, 0x000000, 0.3);
 
         this.physics.add.existing(ball);
         ball.setData('health', this.enemyHealth);
         ball.setData('glow', glow);
         ball.setData('inner', innerBall);
+        ball.setData('core', coreBall);
+        ball.setData('highlight', highlight);
+        ball.setData('shadow', shadow);
         this.balls.add(ball);
         this.physics.moveToObject(ball, { x: turretX, y: turretY }, 100);
       }
@@ -315,22 +365,181 @@ const TowerDefenseGame = () => {
         const angle = Phaser.Math.Angle.Between(turretX, turretY, tx, ty);
         this.turretBarrel.rotation = angle;
 
-        // Cleaner green laser
-        const laser = this.add.rectangle(turretX, turretY, 35, 5, 0x22c55e);
-        const laserCore = this.add.rectangle(turretX, turretY, 35, 3, 0x4ade80);
-        laser.setOrigin(0, 0.5);
-        laserCore.setOrigin(0, 0.5);
-        laser.rotation = angle;
-        laserCore.rotation = angle;
+        if (this.currentWeapon === 'laser') {
+          const laserGlow = this.add.rectangle(turretX, turretY, 40, 8, 0x22c55e, 0.3);
+          const laser = this.add.rectangle(turretX, turretY, 38, 6, 0x22c55e);
+          const laserCore = this.add.rectangle(turretX, turretY, 38, 3, 0x86efac);
+          laserGlow.setOrigin(0, 0.5);
+          laser.setOrigin(0, 0.5);
+          laserCore.setOrigin(0, 0.5);
+          laserGlow.rotation = angle;
+          laser.rotation = angle;
+          laserCore.rotation = angle;
 
-        this.physics.add.existing(laser);
-        this.lasers.add(laser);
-        laser.setData('core', laserCore);
-        const speed = 420;
-        (laser.body as any).setVelocity(Math.cos(angle) * speed, Math.sin(angle) * speed);
-        this.time.delayedCall(2000, () => {
-          laser.destroy();
-          laserCore.destroy();
+          this.physics.add.existing(laser);
+          this.lasers.add(laser);
+          laser.setData('core', laserCore);
+          laser.setData('glow', laserGlow);
+          const speed = 450;
+          (laser.body as any).setVelocity(Math.cos(angle) * speed, Math.sin(angle) * speed);
+          this.time.delayedCall(2000, () => {
+            if (laser.active) {
+              laser.destroy();
+              laserCore.destroy();
+              laserGlow.destroy();
+            }
+          });
+        } else if (this.currentWeapon === 'explosive') {
+          const rocketGlow = this.add.circle(turretX, turretY, 14, 0xff6b35, 0.4);
+          const rocket = this.add.circle(turretX, turretY, 10, 0xff6b35);
+          const rocketCore = this.add.circle(turretX, turretY, 6, 0xffaa00);
+          const rocketHighlight = this.add.circle(turretX - 2, turretY - 2, 3, 0xffdd88, 0.8);
+
+          this.physics.add.existing(rocket);
+          this.explosions.add(rocket);
+          rocket.setData('core', rocketCore);
+          rocket.setData('glow', rocketGlow);
+          rocket.setData('highlight', rocketHighlight);
+          rocket.setData('angle', angle);
+          const speed = 320;
+          (rocket.body as any).setVelocity(Math.cos(angle) * speed, Math.sin(angle) * speed);
+          this.time.addEvent({
+            delay: 50,
+            repeat: 60,
+            callback: () => {
+              if (rocket.active) {
+                const smoke = this.add.circle(rocket.x, rocket.y, 4, 0x64748b, 0.4);
+                this.tweens.add({
+                  targets: smoke,
+                  alpha: 0,
+                  scale: 2,
+                  duration: 500,
+                  onComplete: () => smoke.destroy(),
+                });
+              }
+            },
+          });
+
+          this.time.delayedCall(3000, () => {
+            if (rocket.active) {
+              this.explode(rocket.x, rocket.y);
+              rocket.destroy();
+              rocketCore.destroy();
+              rocketGlow.destroy();
+              rocketHighlight.destroy();
+            }
+          });
+        } else if (this.currentWeapon === 'melee') {
+          const currentTime = this.time.now;
+          if (currentTime - this.lastMeleeTime < this.meleeCooldown) {
+            return;
+          }
+          this.lastMeleeTime = currentTime;
+          const meleeRange = 90;
+          const meleeArc1 = this.add.arc(
+            turretX,
+            turretY,
+            meleeRange,
+            Phaser.Math.RadToDeg(angle) - 40,
+            Phaser.Math.RadToDeg(angle) + 40,
+            false,
+            0xeab308,
+            0.4,
+          );
+          meleeArc1.setStrokeStyle(12, 0xfbbf24, 0.8);
+
+          const meleeArc2 = this.add.arc(
+            turretX,
+            turretY,
+            meleeRange - 15,
+            Phaser.Math.RadToDeg(angle) - 35,
+            Phaser.Math.RadToDeg(angle) + 35,
+            false,
+            0xfbbf24,
+            0.6,
+          );
+          meleeArc2.setStrokeStyle(8, 0xfde047, 1);
+
+          this.meleeAttacks.add(meleeArc1);
+          this.meleeAttacks.add(meleeArc2);
+          this.tweens.add({
+            targets: [meleeArc1, meleeArc2],
+            alpha: { from: 0.9, to: 0 },
+            scaleX: { from: 0.8, to: 1.4 },
+            scaleY: { from: 0.8, to: 1.4 },
+            duration: 250,
+            ease: 'Power2',
+            onComplete: () => {
+              meleeArc1.destroy();
+              meleeArc2.destroy();
+            },
+          });
+          this.balls.getChildren().forEach((ball: any) => {
+            const dist = Phaser.Math.Distance.Between(turretX, turretY, ball.x, ball.y);
+            if (dist < meleeRange) {
+              let health = ball.getData('health') || 1;
+              health -= this.turretStrength * 3;
+              if (health <= 0) {
+                const glow = ball.getData('glow');
+                const inner = ball.getData('inner');
+                const core = ball.getData('core');
+                const highlight = ball.getData('highlight');
+                const shadow = ball.getData('shadow');
+                if (glow) glow.destroy();
+                if (inner) inner.destroy();
+                if (core) core.destroy();
+                if (highlight) highlight.destroy();
+                if (shadow) shadow.destroy();
+                ball.destroy();
+                this.score += 10;
+                setScore(this.score);
+              } else {
+                ball.setData('health', health);
+              }
+            }
+          });
+        }
+      }
+
+      explode(x: number, y: number) {
+        const explosion = this.add.circle(x, y, 10, 0xff6b35);
+        const explosionOuter = this.add.circle(x, y, 15, 0xff6b35, 0.5);
+
+        this.tweens.add({
+          targets: [explosion, explosionOuter],
+          scaleX: { from: 1, to: 5.5 },
+          scaleY: { from: 1, to: 5.5 },
+          alpha: { from: 1, to: 0 },
+          duration: 400,
+          onComplete: () => {
+            explosion.destroy();
+            explosionOuter.destroy();
+          },
+        });
+        const explosionRadius = 140;
+        this.balls.getChildren().forEach((ball: any) => {
+          const dist = Phaser.Math.Distance.Between(x, y, ball.x, ball.y);
+          if (dist < explosionRadius) {
+            let health = ball.getData('health') || 1;
+            health -= this.turretStrength * 1.5;
+            if (health <= 0) {
+              const glow = ball.getData('glow');
+              const inner = ball.getData('inner');
+              const core = ball.getData('core');
+              const highlight = ball.getData('highlight');
+              const shadow = ball.getData('shadow');
+              if (glow) glow.destroy();
+              if (inner) inner.destroy();
+              if (core) core.destroy();
+              if (highlight) highlight.destroy();
+              if (shadow) shadow.destroy();
+              ball.destroy();
+              this.score += 10;
+              setScore(this.score);
+            } else {
+              ball.setData('health', health);
+            }
+          }
         });
       }
 
@@ -339,25 +548,29 @@ const TowerDefenseGame = () => {
         health -= this.turretStrength;
         if (health <= 0) {
           const laserCore = laser.getData('core');
+          const laserGlow = laser.getData('glow');
           if (laserCore) laserCore.destroy();
+          if (laserGlow) laserGlow.destroy();
           laser.destroy();
           const glow = ball.getData('glow');
           const inner = ball.getData('inner');
+          const core = ball.getData('core');
+          const highlight = ball.getData('highlight');
+          const shadow = ball.getData('shadow');
           if (glow) glow.destroy();
           if (inner) inner.destroy();
+          if (core) core.destroy();
+          if (highlight) highlight.destroy();
+          if (shadow) shadow.destroy();
           ball.destroy();
           this.score += 10;
           setScore(this.score);
         } else {
-          const laserCore = laser.getData('core');
-          if (laserCore) laserCore.destroy();
-          laser.destroy();
           ball.setData('health', health);
         }
       }
 
       update() {
-        // Handle WASD movement
         const speed = this.cameraSpeed;
         if (this.wasd.W.isDown) {
           this.turretBase.y -= speed * 0.016;
@@ -371,10 +584,7 @@ const TowerDefenseGame = () => {
         if (this.wasd.D.isDown) {
           this.turretBase.x += speed * 0.016;
         }
-
-        // Draw infinite grid based on camera position
         this.gridGraphics.clear();
-        this.gridGraphics.lineStyle(0.5, 0x1e293b, 0.2);
 
         const cam = this.cameras.main;
         const gridSize = 50;
@@ -382,18 +592,33 @@ const TowerDefenseGame = () => {
         const endX = Math.ceil((cam.scrollX + cam.width + 100) / gridSize) * gridSize;
         const startY = Math.floor((cam.scrollY - 100) / gridSize) * gridSize;
         const endY = Math.ceil((cam.scrollY + cam.height + 100) / gridSize) * gridSize;
-
+        this.gridGraphics.lineStyle(1, 0x1e293b, 0.3);
         for (let x = startX; x <= endX; x += gridSize) {
           this.gridGraphics.lineBetween(x, startY, x, endY);
         }
         for (let y = startY; y <= endY; y += gridSize) {
           this.gridGraphics.lineBetween(startX, y, endX, y);
         }
-
-        // Update glow and inner ball positions, check collision with center
+        this.gridGraphics.lineStyle(2, 0x334155, 0.4);
+        for (let x = startX; x <= endX; x += gridSize * 5) {
+          this.gridGraphics.lineBetween(x, startY, x, endY);
+        }
+        for (let y = startY; y <= endY; y += gridSize * 5) {
+          this.gridGraphics.lineBetween(startX, y, endX, y);
+        }
+        this.gridGraphics.fillStyle(0x475569, 0.5);
+        for (let x = startX; x <= endX; x += gridSize) {
+          for (let y = startY; y <= endY; y += gridSize) {
+            this.gridGraphics.fillCircle(x, y, 1.5);
+          }
+        }
         this.balls.getChildren().forEach((ball: any) => {
           const glow = ball.getData('glow');
           const inner = ball.getData('inner');
+          const core = ball.getData('core');
+          const highlight = ball.getData('highlight');
+          const shadow = ball.getData('shadow');
+
           if (glow) {
             glow.x = ball.x;
             glow.y = ball.y;
@@ -402,19 +627,62 @@ const TowerDefenseGame = () => {
             inner.x = ball.x;
             inner.y = ball.y;
           }
-          // Update laser cores
+          if (core) {
+            core.x = ball.x;
+            core.y = ball.y;
+          }
+          if (highlight) {
+            highlight.x = ball.x - 4;
+            highlight.y = ball.y - 4;
+          }
+          if (shadow) {
+            shadow.x = ball.x + 2;
+            shadow.y = ball.y + 2;
+          }
+          if (!ball.getData('hitCenter')) {
+            const body = ball.body as Phaser.Physics.Arcade.Body;
+            if (body) {
+              const angle = Phaser.Math.Angle.Between(
+                ball.x,
+                ball.y,
+                this.turretBase.x,
+                this.turretBase.y,
+              );
+              const speed = 100;
+              body.setVelocity(Math.cos(angle) * speed, Math.sin(angle) * speed);
+            }
+          }
         });
         this.lasers.getChildren().forEach((laser: any) => {
           const core = laser.getData('core');
+          const glow = laser.getData('glow');
           if (core) {
             core.x = laser.x;
             core.y = laser.y;
           }
+          if (glow) {
+            glow.x = laser.x;
+            glow.y = laser.y;
+          }
         });
-
-        // Check ball collisions with turret
+        this.explosions.getChildren().forEach((rocket: any) => {
+          const core = rocket.getData('core');
+          const glow = rocket.getData('glow');
+          const highlight = rocket.getData('highlight');
+          if (core) {
+            core.x = rocket.x;
+            core.y = rocket.y;
+          }
+          if (glow) {
+            glow.x = rocket.x;
+            glow.y = rocket.y;
+          }
+          if (highlight) {
+            highlight.x = rocket.x - 2;
+            highlight.y = rocket.y - 2;
+          }
+        });
         this.balls.getChildren().forEach((ball: any) => {
-          // Check if ball reached turret center
           const distance = Phaser.Math.Distance.Between(
             ball.x,
             ball.y,
@@ -424,7 +692,15 @@ const TowerDefenseGame = () => {
           if (distance < 40 && !ball.getData('hitCenter')) {
             ball.setData('hitCenter', true);
             const ballGlow = ball.getData('glow');
+            const ballInner = ball.getData('inner');
+            const ballCore = ball.getData('core');
+            const ballHighlight = ball.getData('highlight');
+            const ballShadow = ball.getData('shadow');
             if (ballGlow) ballGlow.destroy();
+            if (ballInner) ballInner.destroy();
+            if (ballCore) ballCore.destroy();
+            if (ballHighlight) ballHighlight.destroy();
+            if (ballShadow) ballShadow.destroy();
             ball.destroy();
             this.health -= 1;
             setHealth(this.health);
@@ -446,6 +722,7 @@ const TowerDefenseGame = () => {
       }
     }
 
+    // Phaser Configuration
     const config = {
       type: Phaser.WEBGL,
       width: 800,
@@ -485,147 +762,49 @@ const TowerDefenseGame = () => {
     }
   };
 
+  // Component Render
   return (
-    <div className="h-screen w-full bg-background text-foreground flex items-center justify-center p-4 overflow-hidden">
-      <div className="w-full max-w-5xl space-y-4">
-        {/* Header Stats */}
-        <div className="flex items-center justify-between gap-4">
-          <Card className="flex-1 border-game-yellow/30 bg-card/95 backdrop-blur shadow-lg">
-            <CardContent className="p-4">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg bg-game-yellow/20 border border-game-yellow/30 flex items-center justify-center">
-                  <Shield className="w-5 h-5 text-game-yellow" />
-                </div>
-                <div>
-                  <p className="text-xs text-muted-foreground font-sans">Game Mode</p>
-                  <p className="text-sm font-semibold font-sans">Turret Defense</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="border-game-blue/30 bg-card/95 backdrop-blur shadow-lg">
-            <CardContent className="p-4">
-              <div className="flex items-center gap-2">
-                <div className="w-10 h-10 rounded-lg bg-game-blue/20 border border-game-blue/30 flex items-center justify-center">
-                  <Trophy className="w-5 h-5 text-game-blue" />
-                </div>
-                <div>
-                  <p className="text-xs text-muted-foreground font-sans">Score</p>
-                  <p className="text-lg font-bold font-sans">{score}</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="flex-1 border-game-green/30 bg-card/95 backdrop-blur shadow-lg">
-            <CardContent className="p-4">
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <div className="w-8 h-8 rounded-lg bg-game-green/20 border border-game-green/30 flex items-center justify-center">
-                      <Heart className="w-4 h-4 text-game-green" />
-                    </div>
-                    <p className="text-xs text-muted-foreground font-sans">Health</p>
-                  </div>
-                  <p className="text-sm font-bold font-sans text-game-green">{health}/10</p>
-                </div>
-                <Progress
-                  value={(health / 10) * 100}
-                  className="h-2 bg-muted"
-                  indicatorClassName="bg-game-green"
-                />
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Game Canvas */}
+    <div className="h-screen w-full bg-background text-foreground flex items-center justify-center p-3 overflow-hidden relative">
+      <div className="absolute top-3 left-3 z-50">
+        <LanguageSelector />
+      </div>
+      <div className="w-full max-w-6xl h-full flex flex-col gap-3">
+        <GameStats score={score} health={health} maxHealth={10} />
         <Card
           className="border-border/50 bg-card/95 backdrop-blur shadow-lg relative"
           style={{ flexGrow: 1, minHeight: 0 }}
         >
-          <CardContent className="p-4 h-full">
+          <GameHeader isPaused={paused} onInfoClick={() => setShowInfo(true)} />
+          <CardContent className="p-4" style={{ height: 'calc(100% - 50px)' }}>
             <div
               ref={gameRef}
               className="bg-game-dark rounded-lg overflow-hidden border border-border/50 shadow-xl w-full h-full"
             />
 
-            {/* Game Over Overlay */}
-            {gameOver && (
-              <div className="absolute inset-0 bg-background/90 backdrop-blur-sm flex items-center justify-center rounded-lg">
-                <Card className="border-game-red/40 bg-card/95 backdrop-blur shadow-xl">
-                  <CardHeader className="text-center pb-4">
-                    <CardTitle className="text-3xl font-bold text-game-red font-sans">
-                      Game Over
-                    </CardTitle>
-                    <p className="text-muted-foreground mt-2 font-sans">Final Score: {score}</p>
-                  </CardHeader>
-                  <CardContent className="flex justify-center pb-6">
-                    <Button
-                      onClick={handleRestart}
-                      variant="outline"
-                      size="lg"
-                      className="gap-2 font-sans border-game-yellow/50 text-game-yellow hover:bg-game-yellow/10"
-                    >
-                      <RotateCcw className="w-4 h-4" />
-                      Play Again
-                    </Button>
-                  </CardContent>
-                </Card>
-              </div>
-            )}
+            <GameOverlay isGameOver={gameOver} score={score} onRestart={handleRestart} />
+            <WeaponWheel
+              isOpen={showWeaponWheel}
+              currentWeapon={currentWeapon}
+              onWeaponSelect={(weapon) => {
+                setCurrentWeapon(weapon);
+                if (phaserGameRef.current) {
+                  const scene = phaserGameRef.current.scene.keys['GameScene'];
+                  scene.currentWeapon = weapon;
+                }
+              }}
+            />
           </CardContent>
         </Card>
 
-        {/* Controls - Combined into one card */}
-        <Card className="border-border/30 bg-card/95 backdrop-blur shadow-lg">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between gap-4">
-              <div className="flex gap-3">
-                <Button
-                  onClick={togglePause}
-                  variant="outline"
-                  size="default"
-                  className="gap-2 font-sans border-game-yellow/50 text-game-yellow hover:bg-game-yellow/10"
-                >
-                  {paused ? (
-                    <>
-                      <Play className="w-4 h-4" />
-                      Resume
-                    </>
-                  ) : (
-                    <>
-                      <Pause className="w-4 h-4" />
-                      Pause
-                    </>
-                  )}
-                </Button>
-
-                <Button
-                  onClick={handleRestart}
-                  variant="outline"
-                  size="default"
-                  className="gap-2 font-sans border-game-red/50 text-game-red hover:bg-game-red/10"
-                >
-                  <RotateCcw className="w-4 h-4" />
-                  Restart
-                </Button>
-              </div>
-
-              <div className="flex items-center gap-2 text-sm text-muted-foreground font-sans">
-                <Crosshair className="w-4 h-4" />
-                <span>WASD to move • Click & hold to aim manually • Auto-shoot enabled</span>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+        <GameControls isPaused={paused} onTogglePause={togglePause} onRestart={handleRestart} />
       </div>
 
       {showQuiz && (
         <QuizPopup question="Is Phaser great for game development?" onAnswer={handleQuizAnswer} />
       )}
       {showReward && <RewardPopup rewards={availableRewards} onSelect={handleRewardSelect} />}
+
+      <InfoDialog isOpen={showInfo} onClose={() => setShowInfo(false)} />
     </div>
   );
 };
