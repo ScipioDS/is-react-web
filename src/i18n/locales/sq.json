@@ -1,0 +1,82 @@
+{
+  "game": {
+    "title": "Mbrojtja e Kullës",
+    "gameMode": "Mënyra e Lojës",
+    "survival": "Mbijetesë",
+    "score": "Rezultati",
+    "health": "Shëndeti",
+    "active": "Aktiv",
+    "paused": "Në Pauzë",
+    "gameOver": "Loja Mbaroi",
+    "finalScore": "Rezultati Përfundimtar",
+    "playAgain": "Luaj Përsëri",
+    "pause": "Pauzë",
+    "resume": "Vazhdo",
+    "restart": "Rifillo",
+    "controlsHint": "WASD për lëvizje • Kliko dhe mbaj për synimin manual • Auto-gjuajtja e aktivizuar",
+    "howToPlay": "Si të Luash",
+    "selectWeapon": "Zgjidh Armën",
+    "releaseTab": "Lësho Tab për të zgjedhur"
+  },
+  "info": {
+    "objective": {
+      "title": "Objektivi",
+      "description": "Mbro kullën tënde nga valë të pafundme armiqsh. Mbijeto sa më gjatë që të mundesh dhe arrij rezultatin më të lartë!"
+    },
+    "controls": {
+      "title": "Kontrollet",
+      "movement": "Lëvizja",
+      "movementDesc": "Navigoni kullën tuaj nëpër një fushëbeteje të pafundme. Përdorni W për të lëvizur lart, S për të lëvizur poshtë, A për të lëvizur majtas dhe D për të lëvizur djathtas. Pozicionohuni strategjikisht për të menaxhuar tufa armiqsh!",
+      "clickHold": "Kliko dhe Mbaj",
+      "clickHoldDesc": "Synimin manual dhe gjuajtjen në pozicionin e kursorit",
+      "autoFire": "Auto-Gjuajtja",
+      "autoFireDesc": "Automatikisht synon dhe qëllon armikun më të afërt"
+    },
+    "weapons": {
+      "title": "Armët",
+      "switchHint": "për të ndryshuar",
+      "laser": {
+        "name": "Lazer",
+        "description": "Projektile të shpejta dhe të sakta. Më i miri për synimin preciz."
+      },
+      "explosive": {
+        "name": "Eksploziv",
+        "description": "Dëmtim në zonë gjatë goditjes. Shkakton 1.5x dëmtim në rrezet e mëdha të shpërthimit."
+      },
+      "melee": {
+        "name": "Luftë me Duar",
+        "description": "Goditje nga afër. Shkakton 3x dëmtim por ka kohë rikuperimi (0.8s)."
+      }
+    },
+    "quiz": {
+      "title": "Sistemi i Kuizit",
+      "description": "Çdo 100 pikë, do të përballeni me një pyetje kuizi. Përgjigjuni saktë për të zgjedhur përmirësime të fuqishme duke përfshirë dëmtim të shtuar, restaurim shëndeti dhe aftësi të përmirësuara!"
+    },
+    "goodLuck": "Fat të mirë, Komandant! 🎮"
+  },
+  "weapons": {
+    "laser": "Lazer",
+    "explosive": "Eksploziv",
+    "melee": "Luftë me Duar"
+  },
+  "quiz": {
+    "title": "Kuiz i Shpejtë!",
+    "true": "I vërtetë",
+    "false": "I gabuar"
+  },
+  "rewards": {
+    "correct": "E saktë!",
+    "choose": "Zgjidhni shpërblimin tuaj",
+    "fasterAutofire": "Auto-Gjuajtje më e Shpejtë",
+    "fasterAutofireDesc": "Rritni shpejtësinë e zjarrit",
+    "powerAttack": "Sulm i Fuqishëm",
+    "powerAttackDesc": "Dyfishoni dëmtimin e kullës",
+    "healthBoost": "Rritje Shëndeti",
+    "healthBoostDesc": "+1 Pikë shëndeti",
+    "areaRadius": "Rreze Zone+",
+    "areaRadiusDesc": "Zonë më e madhe sulmi",
+    "areaPower": "Fuqi Zone+",
+    "areaPowerDesc": "Sulme më të forta në zonë",
+    "specialUpgrade": "Përmirësim special"
+  }
+}
