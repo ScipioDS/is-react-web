@@ -12,9 +12,31 @@ import { GameHeader } from './GameHeader';
 import { LanguageSelector } from './LanguageSelector';
 import Phaser from 'phaser';
 import { Card, CardContent } from '@/components/ui/card';
+import {QuizQuestion} from "@/components/game/QuizModels.ts";
+import {useTranslation} from "react-i18next";
+import {quizzesAL} from "@/components/game/quiz/quizSQ.ts";
+import {quizzesMK} from "@/components/game/quiz/quizMK.ts";
+import {shuffle} from "@/components/game/helpers/shuffle.tsx";
+
+const quizzesByLanguage: Record<string, QuizQuestion[]> = {
+  en: quizzesAL,
+  mk: quizzesMK,
+};
 
 const TowerDefenseGame = () => {
-  // Component State
+  const { i18n } = useTranslation();
+
+  const [quizQuestions, setQuizQuestions] = React.useState<QuizQuestion[]>(
+      shuffle(quizzesByLanguage[i18n.language] || quizzesAL)
+  );
+  const [currentQuizIndex, setCurrentQuizIndex] = React.useState(0);
+
+  React.useEffect(() => {
+    const randomized = shuffle(quizzesByLanguage[i18n.language] || quizzesAL);
+    setQuizQuestions(randomized);
+    setCurrentQuizIndex(0);
+  }, [i18n.language]);
+
   const gameRef = useRef<HTMLDivElement | null>(null);
   const phaserGameRef = useRef<any>(null);
   const [showQuiz, setShowQuiz] = React.useState(false);
@@ -64,9 +86,11 @@ const TowerDefenseGame = () => {
       }
       setAvailableRewards(choices);
       setShowReward(true);
-    } else {
-      scene.scene.resume();
-      setPaused(false);
+      if (currentQuizIndex < quizQuestions.length - 1) {
+        setCurrentQuizIndex(currentQuizIndex + 1);
+      } else {
+        setCurrentQuizIndex(0);
+      }
     }
   };
 
@@ -102,6 +126,7 @@ const TowerDefenseGame = () => {
     setShowReward(false);
     if (scene) {
       scene.scene.resume();
+      scene.quizShown = false;
     }
     setPaused(false);
   };
@@ -160,21 +185,21 @@ const TowerDefenseGame = () => {
         bg.setOrigin(0.5, 0.5);
         bg.setScrollFactor(0);
         const obstacles = this.add.group();
-        for (let i = 0; i < 100; i++) {
+        for (let i = 0; i < 500; i++) {
           const x = Phaser.Math.Between(-5000, 5000);
           const y = Phaser.Math.Between(-5000, 5000);
           const size = Phaser.Math.Between(15, 40);
           const shape = Phaser.Math.Between(0, 2);
 
           if (shape === 0) {
-            const rock = this.add.circle(x, y, size, 0x1e293b, 0.6);
+            const rock = this.add.circle(x, y, size, 0x1e293b, 0.5);
             obstacles.add(rock);
           } else if (shape === 1) {
-            const square = this.add.rectangle(x, y, size, size, 0x334155, 0.5);
+            const square = this.add.rectangle(x, y, size, size, 0x334155, 0.4);
             square.rotation = Phaser.Math.FloatBetween(0, Math.PI);
             obstacles.add(square);
           } else {
-            const triangle = this.add.triangle(x, y, 0, 0, size, 0, size / 2, size, 0x475569, 0.4);
+            const triangle = this.add.triangle(x, y, 0, 0, size, 0, size / 2, size, 0x475569, 0.3);
             triangle.rotation = Phaser.Math.FloatBetween(0, Math.PI * 2);
             obstacles.add(triangle);
           }
@@ -254,20 +279,31 @@ const TowerDefenseGame = () => {
           loop: true,
         });
 
-        this.physics.add.overlap(this.lasers, this.balls, this.hitBall, undefined as any, this);
         this.physics.add.overlap(
-          this.explosions,
-          this.balls,
-          (rocket: any, ball: any) => {
-            this.explode(rocket.x, rocket.y);
-            const core = rocket.getData('core');
-            const trail = rocket.getData('trail');
-            if (core) core.destroy();
-            if (trail) trail.destroy();
-            rocket.destroy();
-          },
-          undefined as any,
-          this,
+            this.explosions,
+            this.balls,
+            (rocket: any, ball: any) => {
+              this.explode(rocket.x, rocket.y);
+              const core = rocket.getData('core');
+              const glow = rocket.getData('glow');
+              const highlight = rocket.getData('highlight');
+              if (core) core.destroy();
+              if (glow) glow.destroy();
+              if (highlight) highlight.destroy();
+              rocket.destroy();
+            },
+            undefined as any,
+            this,
+        );
+
+        this.physics.add.overlap(
+            this.lasers,
+            this.balls,
+            (laser: any, ball: any) => {
+              this.hitBall(laser, ball);
+            },
+            undefined as any,
+            this,
         );
 
         this.input.on('pointerdown', (pointer: any) => {
@@ -477,8 +513,7 @@ const TowerDefenseGame = () => {
           this.balls.getChildren().forEach((ball: any) => {
             const dist = Phaser.Math.Distance.Between(turretX, turretY, ball.x, ball.y);
             if (dist < meleeRange) {
-              let health = ball.getData('health') || 1;
-              health -= this.turretStrength * 3;
+              const health = this.damageBall(3, ball);
               if (health <= 0) {
                 const glow = ball.getData('glow');
                 const inner = ball.getData('inner');
@@ -520,8 +555,7 @@ const TowerDefenseGame = () => {
         this.balls.getChildren().forEach((ball: any) => {
           const dist = Phaser.Math.Distance.Between(x, y, ball.x, ball.y);
           if (dist < explosionRadius) {
-            let health = ball.getData('health') || 1;
-            health -= this.turretStrength * 1.5;
+            const health = this.damageBall(1.5, ball);
             if (health <= 0) {
               const glow = ball.getData('glow');
               const inner = ball.getData('inner');
@@ -544,8 +578,7 @@ const TowerDefenseGame = () => {
       }
 
       hitBall(laser: any, ball: any) {
-        let health = ball.getData('health') || 1;
-        health -= this.turretStrength;
+        const health = this.damageBall(1, ball);
         if (health <= 0) {
           const laserCore = laser.getData('core');
           const laserGlow = laser.getData('glow');
@@ -568,6 +601,36 @@ const TowerDefenseGame = () => {
         } else {
           ball.setData('health', health);
         }
+      }
+
+      damageBall(multiplier: number, ball: any): number {
+        const damage = this.turretStrength * multiplier;
+        let health = ball.getData('health') || 1;
+        health -= damage;
+
+        // Create floating damage text
+        const damageText = this.add.text(ball.x, ball.y - 30, `-${damage}`, {
+          fontSize: '20px',
+          color: '#ff6b6b',
+          fontStyle: 'bold',
+          stroke: '#000000',
+          strokeThickness: 3,
+        });
+        damageText.setOrigin(0.5, 0.5);
+
+        // Animate the damage text
+        this.tweens.add({
+          targets: damageText,
+          y: damageText.y - 40,
+          alpha: { from: 1, to: 0 },
+          duration: 800,
+          ease: 'Power2',
+          onComplete: () => {
+            damageText.destroy();
+          },
+        });
+
+        return health;
       }
 
       update() {
@@ -713,6 +776,7 @@ const TowerDefenseGame = () => {
 
         if (Math.floor(this.score / 100) > this.level) {
           this.level += 1;
+          console.log(this.level)
           this.enemyHealth *= 2;
           if (!this.quizShown) {
             this.quizShown = true;
@@ -800,7 +864,10 @@ const TowerDefenseGame = () => {
       </div>
 
       {showQuiz && (
-        <QuizPopup question="Is Phaser great for game development?" onAnswer={handleQuizAnswer} />
+          <QuizPopup
+              question={quizQuestions[currentQuizIndex]}
+              onAnswer={handleQuizAnswer}
+          />
       )}
       {showReward && <RewardPopup rewards={availableRewards} onSelect={handleRewardSelect} />}
 

@@ -15,6 +15,16 @@ export function GameStats({ score, health, maxHealth = 10 }: GameStatsProps) {
 
   return (
     <div className="flex items-center justify-between gap-3">
+      <div className="backdrop-blur shadow-lg">
+          <div className="flex items-center justify-center">
+            <img
+                src="/mksafenetlogo-white.svg"
+                alt="Game Logo"
+                className="h-10 w-auto"
+            />
+          </div>
+      </div>
+
       <Card className="flex-1 border-game-yellow/30 bg-card/95 backdrop-blur shadow-lg">
         <CardContent className="p-3">
           <div className="flex items-center gap-3">
