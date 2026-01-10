@@ -31,7 +31,7 @@ npm run build
 
 The compiled files will be in the `dist/` folder.
 
-## Deployment
+## Prepare for Deployment
 
 To deploy to a web server:
 
