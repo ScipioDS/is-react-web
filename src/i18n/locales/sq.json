@@ -13,7 +13,7 @@
     "pause": "Pauzë",
     "resume": "Vazhdo",
     "restart": "Rifillo",
-    "controlsHint": "WASD për lëvizje • Kliko dhe mbaj për synimin manual • Auto-gjuajtja e aktivizuar",
+    "controlsHint": "WASD për lëvizje, mbaj për sulme shpërthyese",
     "howToPlay": "Si të Luash",
     "selectWeapon": "Zgjidh Armën",
     "releaseTab": "Lësho Tab për të zgjedhur"
@@ -52,7 +52,19 @@
       "title": "Sistemi i Kuizit",
       "description": "Çdo 100 pikë, do të përballeni me një pyetje kuizi. Përgjigjuni saktë për të zgjedhur përmirësime të fuqishme duke përfshirë dëmtim të shtuar, restaurim shëndeti dhe aftësi të përmirësuara!"
     },
-    "goodLuck": "Fat të mirë, Komandant! 🎮"
+    "goodLuck": "Fat të mirë, Komandant! 🎮",
+    "imReady": "Jam gati"
+  },
+  "stats": {
+    "playerStats": "Fuqitë e Lojtarit",
+    "enemyStats": "Statusi i Armikut",
+    "turretPower": "Fuqia e Kullës",
+    "moveSpeed": "Shpejtësia",
+    "explosionRadius": "Rrezja e Shpërthimit",
+    "explosionPower": "Fuqia e Shpërthimit",
+    "health": "Shëndeti",
+    "speed": "Shpejtësia",
+    "level": "Niveli"
   },
   "weapons": {
     "laser": "Lazer",
@@ -62,7 +74,9 @@
   "quiz": {
     "title": "Kuiz i Shpejtë!",
     "true": "I vërtetë",
-    "false": "I gabuar"
+    "false": "I gabuar",
+    "correct": "Saktë!",
+    "wrong": "Gabim!"
   },
   "rewards": {
     "correct": "E saktë!",
@@ -73,6 +87,8 @@
     "powerAttackDesc": "Dyfishoni dëmtimin e kullës",
     "healthBoost": "Rritje Shëndeti",
     "healthBoostDesc": "+1 Pikë shëndeti",
+    "speedBoost": "Rritje Shpejtësie",
+    "speedBoostDesc": "Lëvizje më e shpejtë e kullës",
     "areaRadius": "Rreze Zone+",
     "areaRadiusDesc": "Zonë më e madhe sulmi",
     "areaPower": "Fuqi Zone+",

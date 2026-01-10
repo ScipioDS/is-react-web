@@ -16,13 +16,17 @@ export function GameOverlay({ isGameOver, score, onRestart }: GameOverlayProps) 
   if (!isGameOver) return null;
 
   return (
-    <div className="absolute inset-0 bg-background/90 backdrop-blur-sm flex items-center justify-center rounded-lg">
-      <Card className="border-game-red/40 bg-card/95 backdrop-blur shadow-xl">
-        <CardHeader className="text-center pb-4">
-          <CardTitle className="text-3xl font-bold text-game-red font-sans">{t('game.gameOver')}</CardTitle>
-          <p className="text-muted-foreground mt-2 font-sans">{t('game.finalScore')}: {score}</p>
+    <div className="absolute inset-0 bg-background/90 backdrop-blur-sm flex items-center justify-center rounded-lg p-4">
+      <Card className="border-game-red/40 bg-card/95 backdrop-blur shadow-xl w-full max-w-md">
+        <CardHeader className="text-center pb-3 sm:pb-4 pt-4 sm:pt-6">
+          <CardTitle className="text-2xl sm:text-3xl font-bold text-game-red font-sans">
+            {t('game.gameOver')}
+          </CardTitle>
+          <p className="text-sm sm:text-base text-muted-foreground mt-2 font-sans">
+            {t('game.finalScore')}: {score}
+          </p>
         </CardHeader>
-        <CardContent className="flex justify-center pb-6">
+        <CardContent className="flex justify-center pb-4 sm:pb-6">
           <Button
             onClick={onRestart}
             variant="outline"

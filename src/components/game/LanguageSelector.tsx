@@ -19,24 +19,32 @@ export function LanguageSelector() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <button className="flex items-center gap-2 px-3 py-2 rounded-md bg-card/95 border border-border/50 hover:bg-muted/50 transition-colors text-muted-foreground hover:text-foreground">
-          <Languages className="w-3.5 h-3.5" />
+        <button
+          className="flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-1.5 sm:py-2 rounded-md bg-card/95 border border-border/50 hover:bg-muted/50 transition-colors text-muted-foreground hover:text-foreground"
+          aria-label="Change language"
+        >
+          <Languages className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
           <span className="text-xs font-sans">{i18n.language === 'mk' ? 'МК' : 'SQ'}</span>
-          <svg className="w-3 h-3 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg
+            className="w-2.5 h-2.5 sm:w-3 sm:h-3 opacity-50"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
           </svg>
         </button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="start" className="min-w-[140px]">
-        <DropdownMenuItem 
+      <DropdownMenuContent align="start" className="min-w-[120px] sm:min-w-[140px]">
+        <DropdownMenuItem
           onClick={() => changeLanguage('mk')}
-          className="text-sm font-sans cursor-pointer"
+          className="text-xs sm:text-sm font-sans cursor-pointer"
         >
           Македонски (МК)
         </DropdownMenuItem>
-        <DropdownMenuItem 
+        <DropdownMenuItem
           onClick={() => changeLanguage('sq')}
-          className="text-sm font-sans cursor-pointer"
+          className="text-xs sm:text-sm font-sans cursor-pointer"
         >
           Shqip (SQ)
         </DropdownMenuItem>
