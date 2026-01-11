@@ -1,20 +1,18 @@
+import { type ReactNode } from 'react';
 import { Zap, Heart, Target, Sparkles, Trophy } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
-interface RewardPopupProps {
+type RewardPopupProps = {
   rewards: string[];
   onSelect: (reward: string) => void;
-}
+};
 
 export const RewardPopup = ({ rewards, onSelect }: RewardPopupProps) => {
   const { t } = useTranslation();
 
-  const rewardConfig: Record<
-    string,
-    { icon: React.ReactNode; label: string; description: string }
-  > = {
+  const rewardConfig: Record<string, { icon: ReactNode; label: string; description: string }> = {
     faster_autofire: {
       icon: <Zap className="w-5 h-5" />,
       label: t('rewards.fasterAutofire'),
