@@ -1,5 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars */
-// Imports
 import React, { useEffect, useRef } from 'react';
 import { QuizPopup } from './QuizPopup';
 import { RewardPopup } from './RewardPopup';
@@ -9,14 +7,13 @@ import { GameOverlay } from './GameOverlay';
 import { GameStats } from './GameStats';
 import { GameControls } from './GameControls';
 import { GameHeader } from './GameHeader';
-import { LanguageSelector } from './LanguageSelector';
 import Phaser from 'phaser';
 import { Card, CardContent } from '@/components/ui/card';
-import {QuizQuestion} from "@/components/game/QuizModels.ts";
-import {useTranslation} from "react-i18next";
-import {quizzesAL} from "@/components/game/quiz/quizSQ.ts";
-import {quizzesMK} from "@/components/game/quiz/quizMK.ts";
-import {shuffle} from "@/components/game/helpers/shuffle.tsx";
+import { QuizQuestion } from '@/components/game/QuizModels.ts';
+import { useTranslation } from 'react-i18next';
+import { quizzesAL } from '@/components/game/quiz/quizSQ.ts';
+import { quizzesMK } from '@/components/game/quiz/quizMK.ts';
+import { shuffle } from '@/components/game/helpers/shuffle.tsx';
 
 const quizzesByLanguage: Record<string, QuizQuestion[]> = {
   en: quizzesAL,
@@ -24,10 +21,10 @@ const quizzesByLanguage: Record<string, QuizQuestion[]> = {
 };
 
 const TowerDefenseGame = () => {
-  const { i18n } = useTranslation();
+  const { i18n, t } = useTranslation();
 
   const [quizQuestions, setQuizQuestions] = React.useState<QuizQuestion[]>(
-      shuffle(quizzesByLanguage[i18n.language] || quizzesAL)
+    shuffle(quizzesByLanguage[i18n.language] || quizzesAL),
   );
   const [currentQuizIndex, setCurrentQuizIndex] = React.useState(0);
 
@@ -44,15 +41,46 @@ const TowerDefenseGame = () => {
   const [availableRewards, setAvailableRewards] = React.useState<string[]>([]);
   const [paused, setPaused] = React.useState(false);
   const [score, setScore] = React.useState(0);
-  const [health, setHealth] = React.useState(3);
+  const [health, setHealth] = React.useState(10);
   const [gameOver, setGameOver] = React.useState(false);
   const [currentWeapon, setCurrentWeapon] = React.useState<'laser' | 'explosive' | 'melee'>(
     'laser',
   );
   const [showWeaponWheel, setShowWeaponWheel] = React.useState(false);
   const [showInfo, setShowInfo] = React.useState(false);
+  const [isFirstVisit, setIsFirstVisit] = React.useState(false);
+  const [playerStats, setPlayerStats] = React.useState({
+    turretStrength: 1,
+    areaAttackRadius: 80,
+    areaAttackPower: 1,
+    cameraSpeed: 300,
+  });
+  const [enemyStats, setEnemyStats] = React.useState({
+    health: 3,
+    speed: 285,
+    level: 0,
+  });
 
-  // Event Handlers
+  React.useEffect(() => {
+    const hasVisited = localStorage.getItem('tower-defense-visited');
+    if (!hasVisited) {
+      setIsFirstVisit(true);
+      setShowInfo(true);
+      setPaused(true);
+    }
+  }, []);
+
+  const handleReady = () => {
+    localStorage.setItem('tower-defense-visited', 'true');
+    setShowInfo(false);
+    setIsFirstVisit(false);
+    if (phaserGameRef.current) {
+      const scene = phaserGameRef.current.scene.keys['GameScene'];
+      scene.scene.resume();
+      setPaused(false);
+    }
+  };
+
   const togglePause = () => {
     if (!phaserGameRef.current) return;
     const scene = phaserGameRef.current.scene.keys['GameScene'];
@@ -77,8 +105,21 @@ const TowerDefenseGame = () => {
     setShowQuiz(false);
     if (!phaserGameRef.current) return;
     const scene = phaserGameRef.current.scene.keys['GameScene'];
+
+    if (currentQuizIndex < quizQuestions.length - 1) {
+      setCurrentQuizIndex(currentQuizIndex + 1);
+    } else {
+      setCurrentQuizIndex(0);
+    }
+
     if (correct) {
-      const rewards = ['power_attack', 'health_boost', 'area_attack_radius', 'area_attack_power'];
+      const rewards = [
+        'power_attack',
+        'health_boost',
+        'speed_boost',
+        'area_attack_radius',
+        'area_attack_power',
+      ];
       const choices = [] as string[];
       while (choices.length < 2 && rewards.length > 0) {
         const i = Math.floor(Math.random() * rewards.length);
@@ -86,11 +127,9 @@ const TowerDefenseGame = () => {
       }
       setAvailableRewards(choices);
       setShowReward(true);
-      if (currentQuizIndex < quizQuestions.length - 1) {
-        setCurrentQuizIndex(currentQuizIndex + 1);
-      } else {
-        setCurrentQuizIndex(0);
-      }
+    } else {
+      scene.scene.resume();
+      setPaused(false);
     }
   };
 
@@ -101,22 +140,31 @@ const TowerDefenseGame = () => {
       case 'power_attack':
         if (scene) {
           scene.turretStrength = (scene.turretStrength || 1) * 2;
+          setPlayerStats((prev) => ({ ...prev, turretStrength: scene.turretStrength }));
         }
         break;
       case 'health_boost':
         if (scene) {
-          scene.health = Math.min((scene.health || 0) + 1, 10);
+          scene.health = Math.min(scene.health + 1, 10);
           setHealth(scene.health);
+        }
+        break;
+      case 'speed_boost':
+        if (scene) {
+          scene.cameraSpeed = Math.min((scene.cameraSpeed || 300) * 1.3, 600);
+          setPlayerStats((prev) => ({ ...prev, cameraSpeed: scene.cameraSpeed }));
         }
         break;
       case 'area_attack_radius':
         if (scene) {
           scene.areaAttackRadius = Math.min((scene.areaAttackRadius || 0) + 30, 200);
+          setPlayerStats((prev) => ({ ...prev, areaAttackRadius: scene.areaAttackRadius }));
         }
         break;
       case 'area_attack_power':
         if (scene) {
           scene.areaAttackPower = (scene.areaAttackPower || 0) + 1;
+          setPlayerStats((prev) => ({ ...prev, areaAttackPower: scene.areaAttackPower }));
         }
         break;
       default:
@@ -132,29 +180,24 @@ const TowerDefenseGame = () => {
   };
 
   useEffect(() => {
-    // Phaser GameScene Class
     class GameScene extends Phaser.Scene {
-      // Scene Properties
       turretBarrel: any;
       balls: any;
       lasers: any;
       score = 0;
       scoreText: any;
-      useMouse = false;
       mouseShootEvent: any = null;
       quizShown = false;
-      health = 3;
+      health = 10;
       level = 0;
       progressBar: any;
       progressBarBG: any;
       spawnEvent: any;
-      autoShootEvent: any;
       gameOverText: any;
       finalScoreText: any;
       retryButton: any;
       enemyHealth = 3;
       turretStrength = 1;
-      autoShootDelay = 500;
       areaAttackRadius = 80;
       areaAttackPower = 1;
       cursors: any;
@@ -168,19 +211,18 @@ const TowerDefenseGame = () => {
       meleeAttacks: any;
       lastMeleeTime = 0;
       meleeCooldown = 800;
+      mobileControls = { up: false, down: false, left: false, right: false };
 
       constructor() {
         super('GameScene');
       }
 
-      // Scene Lifecycle Methods
       preload() {}
 
       create() {
         this.cameras.main.setBounds(-10000, -10000, 20000, 20000);
         this.physics.world.setBounds(-10000, -10000, 20000, 20000);
 
-        // Dark background that follows camera
         const bg = this.add.rectangle(0, 0, 20000, 20000, 0x0a0f14);
         bg.setOrigin(0.5, 0.5);
         bg.setScrollFactor(0);
@@ -272,45 +314,34 @@ const TowerDefenseGame = () => {
           loop: true,
         });
 
-        this.autoShootEvent = this.time.addEvent({
-          delay: this.autoShootDelay,
-          callback: this.shootLaserAuto,
-          callbackScope: this,
-          loop: true,
-        });
-
         this.physics.add.overlap(
-            this.explosions,
-            this.balls,
-            (rocket: any, ball: any) => {
-              this.explode(rocket.x, rocket.y);
-              const core = rocket.getData('core');
-              const glow = rocket.getData('glow');
-              const highlight = rocket.getData('highlight');
-              if (core) core.destroy();
-              if (glow) glow.destroy();
-              if (highlight) highlight.destroy();
-              rocket.destroy();
-            },
-            undefined as any,
-            this,
+          this.explosions,
+          this.balls,
+          (rocket: any, ball: any) => {
+            this.explode(rocket.x, rocket.y);
+            const core = rocket.getData('core');
+            const glow = rocket.getData('glow');
+            const highlight = rocket.getData('highlight');
+            if (core) core.destroy();
+            if (glow) glow.destroy();
+            if (highlight) highlight.destroy();
+            rocket.destroy();
+          },
+          undefined as any,
+          this,
         );
 
         this.physics.add.overlap(
-            this.lasers,
-            this.balls,
-            (laser: any, ball: any) => {
-              this.hitBall(laser, ball);
-            },
-            undefined as any,
-            this,
+          this.lasers,
+          this.balls,
+          (laser: any, ball: any) => {
+            this.hitBall(laser, ball);
+          },
+          undefined as any,
+          this,
         );
 
         this.input.on('pointerdown', (pointer: any) => {
-          if (!this.useMouse) {
-            this.useMouse = true;
-            if (this.autoShootEvent) this.autoShootEvent.paused = true;
-          }
           if (!this.mouseShootEvent) {
             this.mouseShootEvent = this.time.addEvent({
               delay: 150,
@@ -320,12 +351,17 @@ const TowerDefenseGame = () => {
           }
         });
 
-        window.addEventListener('mouseup', () => {
-          this.useMouse = false;
+        this.input.on('pointerup', () => {
           if (this.mouseShootEvent) {
             this.mouseShootEvent.remove();
             this.mouseShootEvent = null;
-            if (this.autoShootEvent) this.autoShootEvent.paused = false;
+          }
+        });
+
+        window.addEventListener('mouseup', () => {
+          if (this.mouseShootEvent) {
+            this.mouseShootEvent.remove();
+            this.mouseShootEvent = null;
           }
         });
       }
@@ -370,25 +406,7 @@ const TowerDefenseGame = () => {
         ball.setData('highlight', highlight);
         ball.setData('shadow', shadow);
         this.balls.add(ball);
-        this.physics.moveToObject(ball, { x: turretX, y: turretY }, 100);
-      }
-
-      shootLaserAuto() {
-        if (this.useMouse) return;
-        const children = this.balls.getChildren();
-        if (!children.length) return;
-        let nearest: any = null;
-        let min = Infinity;
-        const turretX = this.turretBase.x;
-        const turretY = this.turretBase.y;
-        children.forEach((b: any) => {
-          const d = Phaser.Math.Distance.Between(turretX, turretY, b.x, b.y);
-          if (d < min) {
-            min = d;
-            nearest = b;
-          }
-        });
-        if (nearest) this.shootLaserTo(nearest.x, nearest.y);
+        this.physics.moveToObject(ball, { x: turretX, y: turretY }, 285);
       }
 
       shootLaserMouse(mx: number, my: number) {
@@ -471,7 +489,7 @@ const TowerDefenseGame = () => {
             return;
           }
           this.lastMeleeTime = currentTime;
-          const meleeRange = 90;
+          const meleeRange = 150;
           const meleeArc1 = this.add.arc(
             turretX,
             turretY,
@@ -552,6 +570,7 @@ const TowerDefenseGame = () => {
           },
         });
         const explosionRadius = 140;
+        const chainRadius = 220;
         this.balls.getChildren().forEach((ball: any) => {
           const dist = Phaser.Math.Distance.Between(x, y, ball.x, ball.y);
           if (dist < explosionRadius) {
@@ -572,6 +591,32 @@ const TowerDefenseGame = () => {
               setScore(this.score);
             } else {
               ball.setData('health', health);
+            }
+          } else if (dist < chainRadius) {
+            const chainDamage = 0.5;
+            const health = this.damageBall(chainDamage, ball);
+            if (health <= 0) {
+              const glow = ball.getData('glow');
+              const inner = ball.getData('inner');
+              const core = ball.getData('core');
+              const highlight = ball.getData('highlight');
+              const shadow = ball.getData('shadow');
+              if (glow) glow.destroy();
+              if (inner) inner.destroy();
+              if (core) core.destroy();
+              if (highlight) highlight.destroy();
+              if (shadow) shadow.destroy();
+              ball.destroy();
+              this.score += 10;
+              setScore(this.score);
+            } else {
+              ball.setData('health', health);
+              this.tweens.add({
+                targets: [ball.getData('glow')],
+                alpha: { from: 0.6, to: 0.2 },
+                duration: 200,
+                yoyo: true,
+              });
             }
           }
         });
@@ -608,7 +653,6 @@ const TowerDefenseGame = () => {
         let health = ball.getData('health') || 1;
         health -= damage;
 
-        // Create floating damage text
         const damageText = this.add.text(ball.x, ball.y - 30, `-${damage}`, {
           fontSize: '20px',
           color: '#ff6b6b',
@@ -618,7 +662,6 @@ const TowerDefenseGame = () => {
         });
         damageText.setOrigin(0.5, 0.5);
 
-        // Animate the damage text
         this.tweens.add({
           targets: damageText,
           y: damageText.y - 40,
@@ -635,16 +678,16 @@ const TowerDefenseGame = () => {
 
       update() {
         const speed = this.cameraSpeed;
-        if (this.wasd.W.isDown) {
+        if (this.wasd.W.isDown || this.mobileControls.up) {
           this.turretBase.y -= speed * 0.016;
         }
-        if (this.wasd.S.isDown) {
+        if (this.wasd.S.isDown || this.mobileControls.down) {
           this.turretBase.y += speed * 0.016;
         }
-        if (this.wasd.A.isDown) {
+        if (this.wasd.A.isDown || this.mobileControls.left) {
           this.turretBase.x -= speed * 0.016;
         }
-        if (this.wasd.D.isDown) {
+        if (this.wasd.D.isDown || this.mobileControls.right) {
           this.turretBase.x += speed * 0.016;
         }
         this.gridGraphics.clear();
@@ -776,8 +819,7 @@ const TowerDefenseGame = () => {
 
         if (Math.floor(this.score / 100) > this.level) {
           this.level += 1;
-          console.log(this.level)
-          this.enemyHealth *= 2;
+          this.enemyHealth = Math.max(1, this.enemyHealth * 0.85);
           if (!this.quizShown) {
             this.quizShown = true;
             showQuizPopup();
@@ -786,7 +828,6 @@ const TowerDefenseGame = () => {
       }
     }
 
-    // Phaser Configuration
     const config = {
       type: Phaser.WEBGL,
       width: 800,
@@ -804,7 +845,14 @@ const TowerDefenseGame = () => {
       render: {
         antialias: true,
         pixelArt: false,
-        roundPixels: false,
+        roundPixels: true,
+        transparent: false,
+        clearBeforeRender: true,
+        powerPreference: 'high-performance',
+      },
+      fps: {
+        target: 60,
+        forceSetTimeOut: false,
       },
     };
 
@@ -818,38 +866,61 @@ const TowerDefenseGame = () => {
   const handleRestart = () => {
     if (phaserGameRef.current) {
       const scene = phaserGameRef.current.scene.keys['GameScene'];
+      scene.health = 10;
+      scene.score = 0;
+      scene.level = 0;
+      scene.enemyHealth = 3;
+      scene.turretStrength = 1;
+      scene.areaAttackRadius = 80;
+      scene.areaAttackPower = 1;
+      scene.cameraSpeed = 300;
+      scene.quizShown = false;
       scene.scene.restart();
       setPaused(false);
       setScore(0);
-      setHealth(3);
+      setHealth(10);
       setGameOver(false);
+      setPlayerStats({
+        turretStrength: 1,
+        areaAttackRadius: 80,
+        areaAttackPower: 1,
+        cameraSpeed: 300,
+      });
+      setEnemyStats({
+        health: 3,
+        speed: 285,
+        level: 0,
+      });
     }
   };
 
-  // Component Render
   return (
-    <div className="h-screen w-full bg-background text-foreground flex items-center justify-center p-3 overflow-hidden relative">
-      <div className="absolute top-3 left-3 z-50">
-        <LanguageSelector />
-      </div>
-      <div className="w-full max-w-6xl h-full flex flex-col gap-3">
-        <GameStats score={score} health={health} maxHealth={10} />
-        <Card
-          className="border-border/50 bg-card/95 backdrop-blur shadow-lg relative"
-          style={{ flexGrow: 1, minHeight: 0 }}
-        >
-          <GameHeader isPaused={paused} onInfoClick={() => setShowInfo(true)} />
-          <CardContent className="p-4" style={{ height: 'calc(100% - 50px)' }}>
-            <div
-              ref={gameRef}
-              className="bg-game-dark rounded-lg overflow-hidden border border-border/50 shadow-xl w-full h-full"
-            />
-
-            <GameOverlay isGameOver={gameOver} score={score} onRestart={handleRestart} />
-            <WeaponWheel
-              isOpen={showWeaponWheel}
+    <div className="h-screen w-full bg-background text-foreground flex items-center justify-center p-2 sm:p-3 overflow-hidden relative">
+      <div className="w-full max-w-7xl h-full flex flex-col gap-2 sm:gap-3">
+        <div className="flex flex-col lg:flex-row gap-2 sm:gap-3">
+          <div className="lg:w-64 lg:shrink-0">
+            <div className="backdrop-blur shadow-lg px-2 py-1 rounded-md">
+              <div className="flex items-center justify-center gap-2 sm:gap-3">
+                <img
+                  src="/mksafenetlogo-white.svg"
+                  alt="MKSafeNet Logo"
+                  className="h-8 sm:h-10 lg:h-12 w-auto"
+                />
+                <img
+                  src="/finkilogo.png"
+                  alt="Finki Logo"
+                  className="h-10 sm:h-12 lg:h-16 w-auto"
+                />
+              </div>
+            </div>
+          </div>
+          <div className="flex-1">
+            <GameStats
+              score={score}
+              health={health}
+              maxHealth={10}
               currentWeapon={currentWeapon}
-              onWeaponSelect={(weapon) => {
+              onWeaponChange={(weapon) => {
                 setCurrentWeapon(weapon);
                 if (phaserGameRef.current) {
                   const scene = phaserGameRef.current.scene.keys['GameScene'];
@@ -857,21 +928,193 @@ const TowerDefenseGame = () => {
                 }
               }}
             />
-          </CardContent>
-        </Card>
+          </div>
+        </div>
+        <div className="flex-1 flex gap-2 sm:gap-3 min-h-0">
+          <div className="hidden lg:flex flex-col gap-2 sm:gap-3 w-64 shrink-0">
+            <Card className="border-border/50 bg-card/95 backdrop-blur shadow-lg">
+              <CardContent className="p-3">
+                <h3 className="text-sm font-bold font-sans mb-3 flex items-center gap-2 text-foreground">
+                  <svg className="w-4 h-4 text-game-yellow" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M12 2L2 7v10c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V7l-10-5z" />
+                  </svg>
+                  {t('stats.playerStats')}
+                </h3>
+                <div className="space-y-2 text-xs">
+                  <div className="flex justify-between items-center p-2 rounded bg-muted/20 border border-border/30">
+                    <div className="flex items-center gap-2">
+                      <svg
+                        className="w-3.5 h-3.5 text-game-yellow"
+                        fill="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path d="M13 2L3 14h8l-2 8 10-12h-8l2-8z" />
+                      </svg>
+                      <span className="text-muted-foreground">{t('stats.turretPower')}</span>
+                    </div>
+                    <span className="font-bold text-foreground">{playerStats.turretStrength}x</span>
+                  </div>
+                  <div className="flex justify-between items-center p-2 rounded bg-muted/20 border border-border/30">
+                    <div className="flex items-center gap-2">
+                      <svg
+                        className="w-3.5 h-3.5 text-game-blue"
+                        fill="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path d="M13,2.05V5.08C16.39,5.57 19,8.47 19,12C19,12.9 18.82,13.75 18.5,14.54L21.12,16.07C21.68,14.83 22,13.45 22,12C22,6.82 18.05,2.55 13,2.05M12,19C8.13,19 5,15.87 5,12C5,8.47 7.61,5.57 11,5.08V2.05C5.94,2.55 2,6.81 2,12C2,17.52 6.47,22 12,22C14.3,22 16.4,21.18 18.06,19.85L15.44,18.32C14.41,18.75 13.23,19 12,19Z" />
+                      </svg>
+                      <span className="text-muted-foreground">{t('stats.moveSpeed')}</span>
+                    </div>
+                    <span className="font-bold text-foreground">
+                      {Math.round(playerStats.cameraSpeed)}
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center p-2 rounded bg-muted/20 border border-border/30">
+                    <div className="flex items-center gap-2">
+                      <svg
+                        className="w-3.5 h-3.5 text-game-red"
+                        fill="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <circle cx="12" cy="12" r="10" />
+                      </svg>
+                      <span className="text-muted-foreground">{t('stats.explosionRadius')}</span>
+                    </div>
+                    <span className="font-bold text-foreground">
+                      {playerStats.areaAttackRadius}
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center p-2 rounded bg-muted/20 border border-border/30">
+                    <div className="flex items-center gap-2">
+                      <svg
+                        className="w-3.5 h-3.5 text-game-red"
+                        fill="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path d="M11.5,1L2,6V8H21V6M16,10V17H19V10M2,22H21V19H2M10,10V17H13V10M4,10V17H7V10H4Z" />
+                      </svg>
+                      <span className="text-muted-foreground">{t('stats.explosionPower')}</span>
+                    </div>
+                    <span className="font-bold text-foreground">
+                      {playerStats.areaAttackPower}x
+                    </span>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            <Card className="border-border/50 bg-card/95 backdrop-blur shadow-lg">
+              <CardContent className="p-3">
+                <h3 className="text-sm font-bold font-sans mb-3 flex items-center gap-2 text-foreground">
+                  <svg className="w-4 h-4 text-game-red" fill="currentColor" viewBox="0 0 24 24">
+                    <circle cx="12" cy="12" r="10" />
+                  </svg>
+                  {t('stats.enemyStats')}
+                </h3>
+                <div className="space-y-2 text-xs">
+                  <div className="flex justify-between items-center p-2 rounded bg-muted/20 border border-border/30">
+                    <div className="flex items-center gap-2">
+                      <svg
+                        className="w-3.5 h-3.5 text-game-green"
+                        fill="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path d="M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2M12,4A8,8 0 0,1 20,12C20,14.4 19,16.5 17.3,18C15.9,16.7 14,16 12,16C10,16 8.2,16.7 6.7,18C5,16.5 4,14.4 4,12A8,8 0 0,1 12,4M14,5.89C13.62,5.9 13.26,6.15 13.1,6.54L11.81,9.77L8.45,10.25C8.05,10.31 7.72,10.59 7.59,10.97C7.5,11.36 7.58,11.77 7.87,12.05L10.33,14.46L9.75,17.81C9.68,18.21 9.83,18.6 10.15,18.83C10.47,19.06 10.89,19.09 11.23,18.93L14.22,17.53L17.21,18.93C17.55,19.09 17.97,19.06 18.29,18.83C18.61,18.6 18.76,18.21 18.69,17.81L18.11,14.46L20.57,12.05C20.86,11.77 20.94,11.36 20.85,10.97C20.72,10.59 20.39,10.31 19.99,10.25L16.63,9.77L15.34,6.54C15.18,6.15 14.82,5.9 14.44,5.89L14,5.89Z" />
+                      </svg>
+                      <span className="text-muted-foreground">{t('stats.health')}</span>
+                    </div>
+                    <span className="font-bold text-foreground">
+                      {enemyStats.health.toFixed(1)}
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center p-2 rounded bg-muted/20 border border-border/30">
+                    <div className="flex items-center gap-2">
+                      <svg
+                        className="w-3.5 h-3.5 text-game-blue"
+                        fill="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path d="M13,2.05V5.08C16.39,5.57 19,8.47 19,12C19,12.9 18.82,13.75 18.5,14.54L21.12,16.07C21.68,14.83 22,13.45 22,12C22,6.82 18.05,2.55 13,2.05M12,19C8.13,19 5,15.87 5,12C5,8.47 7.61,5.57 11,5.08V2.05C5.94,2.55 2,6.81 2,12C2,17.52 6.47,22 12,22C14.3,22 16.4,21.18 18.06,19.85L15.44,18.32C14.41,18.75 13.23,19 12,19Z" />
+                      </svg>
+                      <span className="text-muted-foreground">{t('stats.speed')}</span>
+                    </div>
+                    <span className="font-bold text-foreground">{enemyStats.speed}</span>
+                  </div>
+                  <div className="flex justify-between items-center p-2 rounded bg-muted/20 border border-border/30">
+                    <div className="flex items-center gap-2">
+                      <svg
+                        className="w-3.5 h-3.5 text-game-yellow"
+                        fill="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path d="M12,2L1,21H23M12,6L19.53,19H4.47M11,10V14H13V10M11,16V18H13V16" />
+                      </svg>
+                      <span className="text-muted-foreground">{t('stats.level')}</span>
+                    </div>
+                    <span className="font-bold text-foreground">{enemyStats.level}</span>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+          <div className="flex-1 flex flex-col gap-2 sm:gap-3 min-w-0">
+            <Card
+              className="border-border/50 bg-card/95 backdrop-blur shadow-lg relative flex-1"
+              style={{ display: 'flex', flexDirection: 'column', minHeight: 0 }}
+            >
+              <GameHeader isPaused={paused} onInfoClick={() => setShowInfo(true)} />
+              <CardContent
+                className="p-1 sm:p-2 lg:p-4 flex-1"
+                style={{ display: 'flex', flexDirection: 'column', minHeight: 0 }}
+              >
+                <div
+                  ref={gameRef}
+                  className="bg-game-dark rounded-lg overflow-hidden border border-border/50 shadow-xl w-full h-full"
+                  style={{ aspectRatio: '4/3', maxHeight: '100%', margin: '0 auto' }}
+                />
 
-        <GameControls isPaused={paused} onTogglePause={togglePause} onRestart={handleRestart} />
+                <GameOverlay isGameOver={gameOver} score={score} onRestart={handleRestart} />
+                <WeaponWheel
+                  isOpen={showWeaponWheel}
+                  currentWeapon={currentWeapon}
+                  onWeaponSelect={(weapon) => {
+                    setCurrentWeapon(weapon);
+                    if (phaserGameRef.current) {
+                      const scene = phaserGameRef.current.scene.keys['GameScene'];
+                      scene.currentWeapon = weapon;
+                    }
+                  }}
+                />
+              </CardContent>
+            </Card>
+
+            <GameControls
+              isPaused={paused}
+              onTogglePause={togglePause}
+              onRestart={handleRestart}
+              onMobileMove={(direction, isPressed) => {
+                if (phaserGameRef.current) {
+                  const scene = phaserGameRef.current.scene.keys['GameScene'];
+                  if (scene && scene.mobileControls) {
+                    scene.mobileControls[direction] = isPressed;
+                  }
+                }
+              }}
+            />
+          </div>
+        </div>
       </div>
 
       {showQuiz && (
-          <QuizPopup
-              question={quizQuestions[currentQuizIndex]}
-              onAnswer={handleQuizAnswer}
-          />
+        <QuizPopup question={quizQuestions[currentQuizIndex]} onAnswer={handleQuizAnswer} />
       )}
       {showReward && <RewardPopup rewards={availableRewards} onSelect={handleRewardSelect} />}
 
-      <InfoDialog isOpen={showInfo} onClose={() => setShowInfo(false)} />
+      <InfoDialog
+        isOpen={showInfo}
+        onClose={() => setShowInfo(false)}
+        onReady={handleReady}
+        isFirstVisit={isFirstVisit}
+      />
     </div>
   );
 };
