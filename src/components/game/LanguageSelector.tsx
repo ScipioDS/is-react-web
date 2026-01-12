@@ -1,5 +1,5 @@
 import React from 'react';
-import { Languages } from 'lucide-react';
+import { Languages, ChevronDown } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import {
   DropdownMenu,
@@ -25,14 +25,7 @@ export function LanguageSelector() {
         >
           <Languages className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
           <span className="text-xs font-sans">{i18n.language === 'mk' ? 'МК' : 'SQ'}</span>
-          <svg
-            className="w-2.5 h-2.5 sm:w-3 sm:h-3 opacity-50"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-          </svg>
+          <ChevronDown className="w-2.5 h-2.5 sm:w-3 sm:h-3 opacity-50" />
         </button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start" className="min-w-[120px] sm:min-w-[140px]">

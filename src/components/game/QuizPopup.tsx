@@ -2,17 +2,17 @@ import { Check, X, HelpCircle } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { QuizPopupProps } from '@/components/game/QuizModels.ts';
-import React from 'react';
+import { QuizPopupProps } from '@/components/game/types';
+import { useState, useEffect } from 'react';
 
 export const QuizPopup = ({ question, onAnswer }: QuizPopupProps) => {
   const { t } = useTranslation();
-  const [selectedAnswer, setSelectedAnswer] = React.useState<number | null>(null);
-  const [showFeedback, setShowFeedback] = React.useState(false);
-  const [isCorrect, setIsCorrect] = React.useState(false);
-  const [shuffledAnswers, setShuffledAnswers] = React.useState(question.answers);
+  const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null);
+  const [showFeedback, setShowFeedback] = useState(false);
+  const [isCorrect, setIsCorrect] = useState(false);
+  const [shuffledAnswers, setShuffledAnswers] = useState(question.answers);
 
-  React.useEffect(() => {
+  useEffect(() => {
     const shuffled = [...question.answers].sort(() => Math.random() - 0.5);
     setShuffledAnswers(shuffled);
     setSelectedAnswer(null);

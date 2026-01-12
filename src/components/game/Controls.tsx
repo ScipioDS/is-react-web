@@ -1,30 +1,25 @@
-import React from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Play, Pause, RotateCcw, Crosshair } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 
-interface GameControlsProps {
+type ControlsProps = {
   isPaused: boolean;
   onTogglePause: () => void;
   onRestart: () => void;
   onMobileMove?: (direction: 'up' | 'down' | 'left' | 'right', isPressed: boolean) => void;
-}
+};
 
-export function GameControls({
-  isPaused,
-  onTogglePause,
-  onRestart,
-  onMobileMove,
-}: GameControlsProps) {
+export function Controls({ isPaused, onTogglePause, onRestart, onMobileMove }: ControlsProps) {
   const { t } = useTranslation();
-  const [isMobile, setIsMobile] = React.useState(false);
-  const [joystickActive, setJoystickActive] = React.useState(false);
-  const [joystickPosition, setJoystickPosition] = React.useState({ x: 0, y: 0 });
-  const joystickRef = React.useRef<HTMLDivElement>(null);
-  const isDraggingJoystick = React.useRef(false);
+  const [isMobile, setIsMobile] = useState(false);
+  const [joystickActive, setJoystickActive] = useState(false);
+  const [joystickPosition, setJoystickPosition] = useState({ x: 0, y: 0 });
+  const joystickRef = useRef<HTMLDivElement>(null);
+  const isDraggingJoystick = useRef(false);
 
-  React.useEffect(() => {
+  useEffect(() => {
     const checkMobile = () => setIsMobile(window.innerWidth < 640);
     checkMobile();
     window.addEventListener('resize', checkMobile);
@@ -60,7 +55,7 @@ export function GameControls({
     onMobileMove('right', deltaX > threshold);
   };
 
-  const handleJoystickStart = (e: React.TouchEvent | React.MouseEvent) => {
+  const handleJoystickStart = (e: TouchEvent | MouseEvent) => {
     e.stopPropagation();
     isDraggingJoystick.current = true;
     setJoystickActive(true);
@@ -81,7 +76,7 @@ export function GameControls({
     }
   };
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (!joystickActive) return;
 
     const handleMove = (e: TouchEvent | MouseEvent) => {
@@ -108,7 +103,7 @@ export function GameControls({
       window.removeEventListener('mousemove', handleMove);
       window.removeEventListener('mouseup', handleEnd);
     };
-  }, [joystickActive]);
+  }, [joystickActive, handleJoystickMove, handleJoystickEnd]);
 
   return (
     <Card className="border-border/30 bg-card/95 backdrop-blur shadow-lg">

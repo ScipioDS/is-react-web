@@ -50,10 +50,17 @@
     },
     "quiz": {
       "title": "Sistemi i Kuizit",
-      "description": "Çdo 100 pikë, do të përballeni me një pyetje kuizi. Përgjigjuni saktë për të zgjedhur përmirësime të fuqishme duke përfshirë dëmtim të shtuar, restaurim shëndeti dhe aftësi të përmirësuara!"
+      "description": "Çdo 100 pikë, do të përballeni me një pyetje kuizi. Përgjigjuni saktë për të zgjedhur përmirësime të fuqishme duke përfshirë dëmtim të shtuar, restaurim shëndeti dhe aftësi të përmirësuara!",
+      "description2": "Çdo 50 pikë, do të përballeni me një pyetje kuizi. Përgjigjuni saktë për të zgjedhur përmirësime të fuqishme duke përfshirë dëmtim të shtuar, restaurim shëndeti, rritje municionesh dhe aftësi të përmirësuara!"
+    },
+    "ammo": {
+      "perWeapon": "Çdo armë ka rezervuarin e vet të municionit. Lazeri ka 35 plumba, Eksplozivi ka 40 plumba, dhe Goditësi ka 5 goditje. Çdo qitje konsumon 1 municion nga arma aktuale.",
+      "description": "Çdo armë konsumon municion kur qëllon. Filloni me 100 municion dhe mund të mbani deri në 100.",
+      "regeneration": "Municionet rigjenerojnë automatikisht me 10 për sekondë, por vetëm kur nuk keni qëlluar për 3 sekonda."
     },
     "goodLuck": "Fat të mirë, Komandant! 🎮",
-    "imReady": "Jam gati"
+    "imReady": "Jam gati",
+    "iUnderstand": "Kuptoj"
   },
   "stats": {
     "playerStats": "Fuqitë e Lojtarit",
@@ -64,7 +71,8 @@
     "explosionPower": "Fuqia e Shpërthimit",
     "health": "Shëndeti",
     "speed": "Shpejtësia",
-    "level": "Niveli"
+    "level": "Niveli",
+    "ammo": "Municion"
   },
   "weapons": {
     "laser": "Lazer",
@@ -87,8 +95,10 @@
     "powerAttackDesc": "Dyfishoni dëmtimin e kullës",
     "healthBoost": "Rritje Shëndeti",
     "healthBoostDesc": "+1 Pikë shëndeti",
-    "speedBoost": "Rritje Shpejtësie",
+    "speedBoost": "Rritje e Shpejtësisë",
     "speedBoostDesc": "Lëvizje më e shpejtë e kullës",
+    "ammoBoost": "Rritje Municionesh",
+    "ammoBoostDesc": "Mbushje e plotë e armës aktuale",
     "areaRadius": "Rreze Zone+",
     "areaRadiusDesc": "Zonë më e madhe sulmi",
     "areaPower": "Fuqi Zone+",

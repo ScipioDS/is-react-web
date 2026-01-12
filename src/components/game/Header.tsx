@@ -5,12 +5,12 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { LanguageSelector } from './LanguageSelector';
 
-interface GameHeaderProps {
+type HeaderProps = {
   isPaused: boolean;
   onInfoClick: () => void;
-}
+};
 
-export function GameHeader({ isPaused, onInfoClick }: GameHeaderProps) {
+export function Header({ isPaused, onInfoClick }: HeaderProps) {
   const { t } = useTranslation();
 
   return (

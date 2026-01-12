@@ -1,67 +1,72 @@
-import React, { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { QuizPopup } from './QuizPopup';
 import { RewardPopup } from './RewardPopup';
 import { InfoDialog } from './InfoDialog';
 import { WeaponWheel } from './WeaponWheel';
-import { GameOverlay } from './GameOverlay';
-import { GameStats } from './GameStats';
-import { GameControls } from './GameControls';
-import { GameHeader } from './GameHeader';
+import { Overlay } from './Overlay';
+import { Stats } from './Stats';
+import { Controls } from './Controls';
+import { Header } from './Header';
 import Phaser from 'phaser';
 import { Card, CardContent } from '@/components/ui/card';
-import { QuizQuestion } from '@/components/game/QuizModels.ts';
+import { QuizQuestion } from '@/components/game/types';
 import { useTranslation } from 'react-i18next';
-import { quizzesAL } from '@/components/game/quiz/quizSQ.ts';
-import { quizzesMK } from '@/components/game/quiz/quizMK.ts';
+import { User, Target, Zap as Power, Crosshair, Heart, Gauge, Flame, BarChart } from 'lucide-react';
+import { questionsAL } from '@/components/game/quiz/quizSQ.ts';
+import { questionsMK } from '@/components/game/quiz/quizMK.ts';
 import { shuffle } from '@/components/game/helpers/shuffle.tsx';
 
 const quizzesByLanguage: Record<string, QuizQuestion[]> = {
-  en: quizzesAL,
-  mk: quizzesMK,
+  en: questionsAL,
+  mk: questionsMK,
 };
 
 const TowerDefenseGame = () => {
   const { i18n, t } = useTranslation();
 
-  const [quizQuestions, setQuizQuestions] = React.useState<QuizQuestion[]>(
-    shuffle(quizzesByLanguage[i18n.language] || quizzesAL),
+  const [quizQuestions, setQuizQuestions] = useState<QuizQuestion[]>(
+    shuffle(quizzesByLanguage[i18n.language] || questionsAL),
   );
-  const [currentQuizIndex, setCurrentQuizIndex] = React.useState(0);
+  const [currentQuizIndex, setCurrentQuizIndex] = useState(0);
 
-  React.useEffect(() => {
-    const randomized = shuffle(quizzesByLanguage[i18n.language] || quizzesAL);
+  useEffect(() => {
+    const randomized = shuffle(quizzesByLanguage[i18n.language] || questionsAL);
     setQuizQuestions(randomized);
     setCurrentQuizIndex(0);
   }, [i18n.language]);
 
   const gameRef = useRef<HTMLDivElement | null>(null);
   const phaserGameRef = useRef<any>(null);
-  const [showQuiz, setShowQuiz] = React.useState(false);
-  const [showReward, setShowReward] = React.useState(false);
-  const [availableRewards, setAvailableRewards] = React.useState<string[]>([]);
-  const [paused, setPaused] = React.useState(false);
-  const [score, setScore] = React.useState(0);
-  const [health, setHealth] = React.useState(10);
-  const [gameOver, setGameOver] = React.useState(false);
-  const [currentWeapon, setCurrentWeapon] = React.useState<'laser' | 'explosive' | 'melee'>(
-    'laser',
-  );
-  const [showWeaponWheel, setShowWeaponWheel] = React.useState(false);
-  const [showInfo, setShowInfo] = React.useState(false);
-  const [isFirstVisit, setIsFirstVisit] = React.useState(false);
-  const [playerStats, setPlayerStats] = React.useState({
+  const [showQuiz, setShowQuiz] = useState(false);
+  const [showReward, setShowReward] = useState(false);
+  const [availableRewards, setAvailableRewards] = useState<string[]>([]);
+  const [paused, setPaused] = useState(false);
+  const [score, setScore] = useState(0);
+  const [health, setHealth] = useState(10);
+  const [gameOver, setGameOver] = useState(false);
+  const [laserAmmo, setLaserAmmo] = useState(35);
+  const [explosiveAmmo, setExplosiveAmmo] = useState(40);
+  const [meleeAmmo, setMeleeAmmo] = useState(5);
+  const maxLaserAmmo = 35;
+  const maxExplosiveAmmo = 40;
+  const maxMeleeAmmo = 5;
+  const [currentWeapon, setCurrentWeapon] = useState<'laser' | 'explosive' | 'melee'>('laser');
+  const [showWeaponWheel, setShowWeaponWheel] = useState(false);
+  const [showInfo, setShowInfo] = useState(false);
+  const [isFirstVisit, setIsFirstVisit] = useState(false);
+  const [playerStats, setPlayerStats] = useState({
     turretStrength: 1,
     areaAttackRadius: 80,
     areaAttackPower: 1,
     cameraSpeed: 300,
   });
-  const [enemyStats, setEnemyStats] = React.useState({
+  const [enemyStats, setEnemyStats] = useState({
     health: 3,
     speed: 285,
     level: 0,
   });
 
-  React.useEffect(() => {
+  useEffect(() => {
     const hasVisited = localStorage.getItem('tower-defense-visited');
     if (!hasVisited) {
       setIsFirstVisit(true);
@@ -116,9 +121,10 @@ const TowerDefenseGame = () => {
       const rewards = [
         'power_attack',
         'health_boost',
-        'speed_boost',
+        'speedBoost',
         'area_attack_radius',
         'area_attack_power',
+        'ammo_boost',
       ];
       const choices = [] as string[];
       while (choices.length < 2 && rewards.length > 0) {
@@ -129,6 +135,7 @@ const TowerDefenseGame = () => {
       setShowReward(true);
     } else {
       scene.scene.resume();
+      scene.quizShown = false;
       setPaused(false);
     }
   };
@@ -149,7 +156,7 @@ const TowerDefenseGame = () => {
           setHealth(scene.health);
         }
         break;
-      case 'speed_boost':
+      case 'speedBoost':
         if (scene) {
           scene.cameraSpeed = Math.min((scene.cameraSpeed || 300) * 1.3, 600);
           setPlayerStats((prev) => ({ ...prev, cameraSpeed: scene.cameraSpeed }));
@@ -165,6 +172,20 @@ const TowerDefenseGame = () => {
         if (scene) {
           scene.areaAttackPower = (scene.areaAttackPower || 0) + 1;
           setPlayerStats((prev) => ({ ...prev, areaAttackPower: scene.areaAttackPower }));
+        }
+        break;
+      case 'ammo_boost':
+        if (scene) {
+          if (scene.currentWeapon === 'laser') {
+            scene.laserAmmo = scene.maxLaserAmmo;
+            setLaserAmmo(scene.laserAmmo);
+          } else if (scene.currentWeapon === 'explosive') {
+            scene.explosiveAmmo = scene.maxExplosiveAmmo;
+            setExplosiveAmmo(scene.explosiveAmmo);
+          } else if (scene.currentWeapon === 'melee') {
+            scene.meleeAmmo = scene.maxMeleeAmmo;
+            setMeleeAmmo(scene.meleeAmmo);
+          }
         }
         break;
       default:
@@ -190,6 +211,12 @@ const TowerDefenseGame = () => {
       quizShown = false;
       health = 10;
       level = 0;
+      laserAmmo = 35;
+      explosiveAmmo = 40;
+      meleeAmmo = 5;
+      maxLaserAmmo = 35;
+      maxExplosiveAmmo = 40;
+      maxMeleeAmmo = 5;
       progressBar: any;
       progressBarBG: any;
       spawnEvent: any;
@@ -211,6 +238,7 @@ const TowerDefenseGame = () => {
       meleeAttacks: any;
       lastMeleeTime = 0;
       meleeCooldown = 800;
+      lastShotTime = 0;
       mobileControls = { up: false, down: false, left: false, right: false };
 
       constructor() {
@@ -310,6 +338,29 @@ const TowerDefenseGame = () => {
         this.spawnEvent = this.time.addEvent({
           delay: 1500,
           callback: this.spawnBall,
+          callbackScope: this,
+          loop: true,
+        });
+
+        this.time.addEvent({
+          delay: 100,
+          callback: () => {
+            const timeSinceLastShot = this.time.now - this.lastShotTime;
+            if (timeSinceLastShot > 3000) {
+              if (this.laserAmmo < this.maxLaserAmmo) {
+                this.laserAmmo = Math.min(this.maxLaserAmmo, this.laserAmmo + 1);
+                setLaserAmmo(this.laserAmmo);
+              }
+              if (this.explosiveAmmo < this.maxExplosiveAmmo) {
+                this.explosiveAmmo = Math.min(this.maxExplosiveAmmo, this.explosiveAmmo + 1);
+                setExplosiveAmmo(this.explosiveAmmo);
+              }
+              if (this.meleeAmmo < this.maxMeleeAmmo) {
+                this.meleeAmmo = Math.min(this.maxMeleeAmmo, this.meleeAmmo + 1);
+                setMeleeAmmo(this.meleeAmmo);
+              }
+            }
+          },
           callbackScope: this,
           loop: true,
         });
@@ -420,6 +471,10 @@ const TowerDefenseGame = () => {
         this.turretBarrel.rotation = angle;
 
         if (this.currentWeapon === 'laser') {
+          if (this.laserAmmo < 1) return;
+          this.laserAmmo -= 1;
+          this.lastShotTime = this.time.now;
+          setLaserAmmo(this.laserAmmo);
           const laserGlow = this.add.rectangle(turretX, turretY, 40, 8, 0x22c55e, 0.3);
           const laser = this.add.rectangle(turretX, turretY, 38, 6, 0x22c55e);
           const laserCore = this.add.rectangle(turretX, turretY, 38, 3, 0x86efac);
@@ -444,6 +499,10 @@ const TowerDefenseGame = () => {
             }
           });
         } else if (this.currentWeapon === 'explosive') {
+          if (this.explosiveAmmo < 1) return;
+          this.explosiveAmmo -= 1;
+          this.lastShotTime = this.time.now;
+          setExplosiveAmmo(this.explosiveAmmo);
           const rocketGlow = this.add.circle(turretX, turretY, 14, 0xff6b35, 0.4);
           const rocket = this.add.circle(turretX, turretY, 10, 0xff6b35);
           const rocketCore = this.add.circle(turretX, turretY, 6, 0xffaa00);
@@ -488,7 +547,11 @@ const TowerDefenseGame = () => {
           if (currentTime - this.lastMeleeTime < this.meleeCooldown) {
             return;
           }
+          if (this.meleeAmmo < 1) return;
+          this.meleeAmmo -= 1;
+          this.lastShotTime = currentTime;
           this.lastMeleeTime = currentTime;
+          setMeleeAmmo(this.meleeAmmo);
           const meleeRange = 150;
           const meleeArc1 = this.add.arc(
             turretX,
@@ -817,9 +880,10 @@ const TowerDefenseGame = () => {
           }
         });
 
-        if (Math.floor(this.score / 100) > this.level) {
+        if (Math.floor(this.score / 50) > this.level) {
           this.level += 1;
-          this.enemyHealth = Math.max(1, this.enemyHealth * 0.85);
+          this.enemyHealth = Math.max(1, this.enemyHealth * 0.92);
+          setEnemyStats({ health: this.enemyHealth, speed: 285, level: this.level });
           if (!this.quizShown) {
             this.quizShown = true;
             showQuizPopup();
@@ -869,6 +933,9 @@ const TowerDefenseGame = () => {
       scene.health = 10;
       scene.score = 0;
       scene.level = 0;
+      scene.laserAmmo = 35;
+      scene.explosiveAmmo = 40;
+      scene.meleeAmmo = 5;
       scene.enemyHealth = 3;
       scene.turretStrength = 1;
       scene.areaAttackRadius = 80;
@@ -879,6 +946,9 @@ const TowerDefenseGame = () => {
       setPaused(false);
       setScore(0);
       setHealth(10);
+      setLaserAmmo(35);
+      setExplosiveAmmo(40);
+      setMeleeAmmo(5);
       setGameOver(false);
       setPlayerStats({
         turretStrength: 1,
@@ -915,10 +985,16 @@ const TowerDefenseGame = () => {
             </div>
           </div>
           <div className="flex-1">
-            <GameStats
+            <Stats
               score={score}
               health={health}
               maxHealth={10}
+              laserAmmo={laserAmmo}
+              explosiveAmmo={explosiveAmmo}
+              meleeAmmo={meleeAmmo}
+              maxLaserAmmo={maxLaserAmmo}
+              maxExplosiveAmmo={maxExplosiveAmmo}
+              maxMeleeAmmo={maxMeleeAmmo}
               currentWeapon={currentWeapon}
               onWeaponChange={(weapon) => {
                 setCurrentWeapon(weapon);
@@ -935,34 +1011,20 @@ const TowerDefenseGame = () => {
             <Card className="border-border/50 bg-card/95 backdrop-blur shadow-lg">
               <CardContent className="p-3">
                 <h3 className="text-sm font-bold font-sans mb-3 flex items-center gap-2 text-foreground">
-                  <svg className="w-4 h-4 text-game-yellow" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M12 2L2 7v10c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V7l-10-5z" />
-                  </svg>
+                  <User className="w-4 h-4 text-game-blue" />
                   {t('stats.playerStats')}
                 </h3>
                 <div className="space-y-2 text-xs">
                   <div className="flex justify-between items-center p-2 rounded bg-muted/20 border border-border/30">
                     <div className="flex items-center gap-2">
-                      <svg
-                        className="w-3.5 h-3.5 text-game-yellow"
-                        fill="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path d="M13 2L3 14h8l-2 8 10-12h-8l2-8z" />
-                      </svg>
+                      <Power className="w-3.5 h-3.5 text-game-yellow" />
                       <span className="text-muted-foreground">{t('stats.turretPower')}</span>
                     </div>
                     <span className="font-bold text-foreground">{playerStats.turretStrength}x</span>
                   </div>
                   <div className="flex justify-between items-center p-2 rounded bg-muted/20 border border-border/30">
                     <div className="flex items-center gap-2">
-                      <svg
-                        className="w-3.5 h-3.5 text-game-blue"
-                        fill="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path d="M13,2.05V5.08C16.39,5.57 19,8.47 19,12C19,12.9 18.82,13.75 18.5,14.54L21.12,16.07C21.68,14.83 22,13.45 22,12C22,6.82 18.05,2.55 13,2.05M12,19C8.13,19 5,15.87 5,12C5,8.47 7.61,5.57 11,5.08V2.05C5.94,2.55 2,6.81 2,12C2,17.52 6.47,22 12,22C14.3,22 16.4,21.18 18.06,19.85L15.44,18.32C14.41,18.75 13.23,19 12,19Z" />
-                      </svg>
+                      <Gauge className="w-3.5 h-3.5 text-game-blue" />
                       <span className="text-muted-foreground">{t('stats.moveSpeed')}</span>
                     </div>
                     <span className="font-bold text-foreground">
@@ -971,13 +1033,7 @@ const TowerDefenseGame = () => {
                   </div>
                   <div className="flex justify-between items-center p-2 rounded bg-muted/20 border border-border/30">
                     <div className="flex items-center gap-2">
-                      <svg
-                        className="w-3.5 h-3.5 text-game-red"
-                        fill="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <circle cx="12" cy="12" r="10" />
-                      </svg>
+                      <Target className="w-3.5 h-3.5 text-game-red" />
                       <span className="text-muted-foreground">{t('stats.explosionRadius')}</span>
                     </div>
                     <span className="font-bold text-foreground">
@@ -986,13 +1042,7 @@ const TowerDefenseGame = () => {
                   </div>
                   <div className="flex justify-between items-center p-2 rounded bg-muted/20 border border-border/30">
                     <div className="flex items-center gap-2">
-                      <svg
-                        className="w-3.5 h-3.5 text-game-red"
-                        fill="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path d="M11.5,1L2,6V8H21V6M16,10V17H19V10M2,22H21V19H2M10,10V17H13V10M4,10V17H7V10H4Z" />
-                      </svg>
+                      <Flame className="w-3.5 h-3.5 text-game-red" />
                       <span className="text-muted-foreground">{t('stats.explosionPower')}</span>
                     </div>
                     <span className="font-bold text-foreground">
@@ -1005,21 +1055,13 @@ const TowerDefenseGame = () => {
             <Card className="border-border/50 bg-card/95 backdrop-blur shadow-lg">
               <CardContent className="p-3">
                 <h3 className="text-sm font-bold font-sans mb-3 flex items-center gap-2 text-foreground">
-                  <svg className="w-4 h-4 text-game-red" fill="currentColor" viewBox="0 0 24 24">
-                    <circle cx="12" cy="12" r="10" />
-                  </svg>
+                  <Crosshair className="w-4 h-4 text-game-red" />
                   {t('stats.enemyStats')}
                 </h3>
                 <div className="space-y-2 text-xs">
                   <div className="flex justify-between items-center p-2 rounded bg-muted/20 border border-border/30">
                     <div className="flex items-center gap-2">
-                      <svg
-                        className="w-3.5 h-3.5 text-game-green"
-                        fill="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path d="M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2M12,4A8,8 0 0,1 20,12C20,14.4 19,16.5 17.3,18C15.9,16.7 14,16 12,16C10,16 8.2,16.7 6.7,18C5,16.5 4,14.4 4,12A8,8 0 0,1 12,4M14,5.89C13.62,5.9 13.26,6.15 13.1,6.54L11.81,9.77L8.45,10.25C8.05,10.31 7.72,10.59 7.59,10.97C7.5,11.36 7.58,11.77 7.87,12.05L10.33,14.46L9.75,17.81C9.68,18.21 9.83,18.6 10.15,18.83C10.47,19.06 10.89,19.09 11.23,18.93L14.22,17.53L17.21,18.93C17.55,19.09 17.97,19.06 18.29,18.83C18.61,18.6 18.76,18.21 18.69,17.81L18.11,14.46L20.57,12.05C20.86,11.77 20.94,11.36 20.85,10.97C20.72,10.59 20.39,10.31 19.99,10.25L16.63,9.77L15.34,6.54C15.18,6.15 14.82,5.9 14.44,5.89L14,5.89Z" />
-                      </svg>
+                      <Heart className="w-3.5 h-3.5 text-game-green" />
                       <span className="text-muted-foreground">{t('stats.health')}</span>
                     </div>
                     <span className="font-bold text-foreground">
@@ -1028,26 +1070,14 @@ const TowerDefenseGame = () => {
                   </div>
                   <div className="flex justify-between items-center p-2 rounded bg-muted/20 border border-border/30">
                     <div className="flex items-center gap-2">
-                      <svg
-                        className="w-3.5 h-3.5 text-game-blue"
-                        fill="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path d="M13,2.05V5.08C16.39,5.57 19,8.47 19,12C19,12.9 18.82,13.75 18.5,14.54L21.12,16.07C21.68,14.83 22,13.45 22,12C22,6.82 18.05,2.55 13,2.05M12,19C8.13,19 5,15.87 5,12C5,8.47 7.61,5.57 11,5.08V2.05C5.94,2.55 2,6.81 2,12C2,17.52 6.47,22 12,22C14.3,22 16.4,21.18 18.06,19.85L15.44,18.32C14.41,18.75 13.23,19 12,19Z" />
-                      </svg>
+                      <Gauge className="w-3.5 h-3.5 text-game-blue" />
                       <span className="text-muted-foreground">{t('stats.speed')}</span>
                     </div>
                     <span className="font-bold text-foreground">{enemyStats.speed}</span>
                   </div>
                   <div className="flex justify-between items-center p-2 rounded bg-muted/20 border border-border/30">
                     <div className="flex items-center gap-2">
-                      <svg
-                        className="w-3.5 h-3.5 text-game-yellow"
-                        fill="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path d="M12,2L1,21H23M12,6L19.53,19H4.47M11,10V14H13V10M11,16V18H13V16" />
-                      </svg>
+                      <BarChart className="w-3.5 h-3.5 text-game-yellow" />
                       <span className="text-muted-foreground">{t('stats.level')}</span>
                     </div>
                     <span className="font-bold text-foreground">{enemyStats.level}</span>
@@ -1061,7 +1091,7 @@ const TowerDefenseGame = () => {
               className="border-border/50 bg-card/95 backdrop-blur shadow-lg relative flex-1"
               style={{ display: 'flex', flexDirection: 'column', minHeight: 0 }}
             >
-              <GameHeader isPaused={paused} onInfoClick={() => setShowInfo(true)} />
+              <Header isPaused={paused} onInfoClick={() => setShowInfo(true)} />
               <CardContent
                 className="p-1 sm:p-2 lg:p-4 flex-1"
                 style={{ display: 'flex', flexDirection: 'column', minHeight: 0 }}
@@ -1072,7 +1102,7 @@ const TowerDefenseGame = () => {
                   style={{ aspectRatio: '4/3', maxHeight: '100%', margin: '0 auto' }}
                 />
 
-                <GameOverlay isGameOver={gameOver} score={score} onRestart={handleRestart} />
+                <Overlay isGameOver={gameOver} score={score} onRestart={handleRestart} />
                 <WeaponWheel
                   isOpen={showWeaponWheel}
                   currentWeapon={currentWeapon}
@@ -1087,7 +1117,7 @@ const TowerDefenseGame = () => {
               </CardContent>
             </Card>
 
-            <GameControls
+            <Controls
               isPaused={paused}
               onTogglePause={togglePause}
               onRestart={handleRestart}
