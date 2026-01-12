@@ -135,6 +135,7 @@ const TowerDefenseGame = () => {
       setShowReward(true);
     } else {
       scene.scene.resume();
+      scene.quizShown = false;
       setPaused(false);
     }
   };
