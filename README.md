@@ -7,9 +7,32 @@ A mobile-friendly tower defense game built with React, TypeScript, and Phaser 3.
 
 ## Quick Setup & Startup
 
-Install dependencies:
+### 1. Cloning
+Clone the project in your desired directory (e.g. with absolute path `/your/desired/dir`):
+
+#### HTTPS
+```bash
+git clone https://github.com/ScipioDS/is-react-web.git
+```
+Or alternatively with SSH:
+
+#### SSH
+```bash
+git clone git@github.com:ScipioDS/is-react-web.git
+```
+
+### 2. Go to the project's root
+```bash
+cd is-react-web
+# or absolutely
+cd /your/desired/dir/is-react-web
+```
+
+### 3. Install dependencies
 ```bash
 npm i
+# or
+npm install
 ```
 
 ## Development
