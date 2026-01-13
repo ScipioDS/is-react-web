@@ -38,6 +38,27 @@ export const RewardPopup = ({ rewards, onSelect }: RewardPopupProps) => {
       label: t('rewards.areaPower'),
       description: t('rewards.areaPowerDesc'),
     },
+    // support keys used in game logic
+    speedBoost: {
+      icon: <Zap className="w-5 h-5" />,
+      label: t('rewards.speedBoost'),
+      description: t('rewards.speedBoostDesc'),
+    },
+    speed_boost: {
+      icon: <Zap className="w-5 h-5" />,
+      label: t('rewards.speedBoost'),
+      description: t('rewards.speedBoostDesc'),
+    },
+    ammo_boost: {
+      icon: <Zap className="w-5 h-5" />,
+      label: t('rewards.ammoBoost'),
+      description: t('rewards.ammoBoostDesc'),
+    },
+    ammoBoost: {
+      icon: <Zap className="w-5 h-5" />,
+      label: t('rewards.ammoBoost'),
+      description: t('rewards.ammoBoostDesc'),
+    },
   };
 
   return (
@@ -59,7 +80,7 @@ export const RewardPopup = ({ rewards, onSelect }: RewardPopupProps) => {
           {rewards.map((reward, index) => {
             const config = rewardConfig[reward] || {
               icon: <Sparkles className="w-5 h-5" />,
-              label: reward,
+              label: t('rewards.specialUpgrade'),
               description: t('rewards.specialUpgrade'),
             };
 

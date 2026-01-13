@@ -50,8 +50,9 @@
     },
     "quiz": {
       "title": "Sistemi i Kuizit",
-      "description": "Çdo 100 pikë, do të përballeni me një pyetje kuizi. Përgjigjuni saktë për të zgjedhur përmirësime të fuqishme duke përfshirë dëmtim të shtuar, restaurim shëndeti dhe aftësi të përmirësuara!",
-      "description2": "Çdo 50 pikë, do të përballeni me një pyetje kuizi. Përgjigjuni saktë për të zgjedhur përmirësime të fuqishme duke përfshirë dëmtim të shtuar, restaurim shëndeti, rritje municionesh dhe aftësi të përmirësuara!"
+      "description": "Çdo 150 pikë, do të përballeni me një pyetje kuizi. Përgjigjuni saktë për të zgjedhur përmirësime të fuqishme duke përfshirë dëmtim të shtuar, restaurim shëndeti dhe aftësi të përmirësuara!",
+      "description2": "Çdo 150 pikë, do të përballeni me një pyetje kuizi. Përgjigjuni saktë për të zgjedhur përmirësime të fuqishme duke përfshirë dëmtim të shtuar, restaurim shëndeti, rritje municionesh dhe aftësi të përmirësuara!",
+      "levelNote": "rritet pas çdo pyetjeje."
     },
     "ammo": {
       "perWeapon": "Çdo armë ka rezervuarin e vet të municionit. Lazeri ka 35 plumba, Eksplozivi ka 40 plumba, dhe Goditësi ka 5 goditje. Çdo qitje konsumon 1 municion nga arma aktuale.",
@@ -98,11 +99,15 @@
     "speedBoost": "Rritje e Shpejtësisë",
     "speedBoostDesc": "Lëvizje më e shpejtë e kullës",
     "ammoBoost": "Rritje Municionesh",
-    "ammoBoostDesc": "Mbushje e plotë e armës aktuale",
+    "ammoBoostDesc": "Shton +5 Lazer, +7 Eksploziv, +1 Merrle (deri në maksimum)",
     "areaRadius": "Rreze Zone+",
     "areaRadiusDesc": "Zonë më e madhe sulmi",
     "areaPower": "Fuqi Zone+",
     "areaPowerDesc": "Sulme më të forta në zonë",
-    "specialUpgrade": "Përmirësim special"
+    "specialUpgrade": "Përmirësim special",
+    "speed_boost": "Rritje e Shpejtësisë",
+    "speed_boostDesc": "Lëvizje më e shpejtë e kullës",
+    "ammo_boost": "Rritje Municionesh",
+    "ammo_boostDesc": "Shton +5 Lazer, +7 Eksploziv, +1 Merrle (deri në maksimum)"
   }
 }
