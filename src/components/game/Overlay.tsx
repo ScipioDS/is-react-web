@@ -4,13 +4,13 @@ import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
-interface GameOverlayProps {
+type OverlayProps = {
   isGameOver: boolean;
   score: number;
   onRestart: () => void;
-}
+};
 
-export function GameOverlay({ isGameOver, score, onRestart }: GameOverlayProps) {
+export function Overlay({ isGameOver, score, onRestart }: OverlayProps) {
   const { t } = useTranslation();
 
   if (!isGameOver) return null;

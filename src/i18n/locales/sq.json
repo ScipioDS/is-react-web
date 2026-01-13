@@ -63,7 +63,8 @@
 >>>>>>> Stashed changes
     },
     "goodLuck": "Fat të mirë, Komandant! 🎮",
-    "imReady": "Jam gati"
+    "imReady": "Jam gati",
+    "iUnderstand": "Kuptoj"
   },
   "stats": {
     "playerStats": "Fuqitë e Lojtarit",
@@ -74,7 +75,8 @@
     "explosionPower": "Fuqia e Shpërthimit",
     "health": "Shëndeti",
     "speed": "Shpejtësia",
-    "level": "Niveli"
+    "level": "Niveli",
+    "ammo": "Municion"
   },
   "weapons": {
     "laser": "Lazer",
@@ -97,8 +99,10 @@
     "powerAttackDesc": "Dyfishoni dëmtimin e kullës",
     "healthBoost": "Rritje Shëndeti",
     "healthBoostDesc": "+1 Pikë shëndeti",
-    "speedBoost": "Rritje Shpejtësie",
+    "speedBoost": "Rritje e Shpejtësisë",
     "speedBoostDesc": "Lëvizje më e shpejtë e kullës",
+    "ammoBoost": "Rritje Municionesh",
+    "ammoBoostDesc": "Mbushje e plotë e armës aktuale",
     "areaRadius": "Rreze Zone+",
     "areaRadiusDesc": "Zonë më e madhe sulmi",
     "areaPower": "Fuqi Zone+",

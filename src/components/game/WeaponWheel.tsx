@@ -2,11 +2,11 @@ import React from 'react';
 import { Zap, Bomb, Swords } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
-interface WeaponWheelProps {
+type WeaponWheelProps = {
   isOpen: boolean;
   currentWeapon: 'laser' | 'explosive' | 'melee';
   onWeaponSelect: (weapon: 'laser' | 'explosive' | 'melee') => void;
-}
+};
 
 export function WeaponWheel({ isOpen, currentWeapon, onWeaponSelect }: WeaponWheelProps) {
   const { t } = useTranslation();

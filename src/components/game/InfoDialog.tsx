@@ -1,16 +1,16 @@
 import React from 'react';
-import { Info, Shield, Trophy, Zap, Bomb, Swords } from 'lucide-react';
+import { Info, Shield, Trophy, Zap, Bomb, Swords, Package } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 
-interface InfoDialogProps {
+type InfoDialogProps = {
   isOpen: boolean;
   onClose: () => void;
   onReady?: () => void;
   isFirstVisit?: boolean;
-}
+};
 
 export function InfoDialog({ isOpen, onClose, onReady, isFirstVisit = false }: InfoDialogProps) {
   const { t } = useTranslation();
@@ -127,8 +127,15 @@ export function InfoDialog({ isOpen, onClose, onReady, isFirstVisit = false }: I
             <div className="space-y-2 sm:space-y-3">
               <div className="flex items-start gap-3 p-3 rounded-lg bg-game-green/10 border border-game-green/30">
                 <Zap className="w-5 h-5 text-game-green mt-0.5" />
-                <div>
-                  <p className="font-semibold font-sans text-sm">{t('info.weapons.laser.name')}</p>
+                <div className="flex-1">
+                  <div className="flex items-center justify-between mb-1">
+                    <p className="font-semibold font-sans text-sm">
+                      {t('info.weapons.laser.name')}
+                    </p>
+                    <Badge variant="outline" className="text-[10px] font-mono">
+                      35 {t('stats.ammo')}
+                    </Badge>
+                  </div>
                   <p className="text-xs text-muted-foreground font-sans">
                     {t('info.weapons.laser.description')}
                   </p>
@@ -136,10 +143,15 @@ export function InfoDialog({ isOpen, onClose, onReady, isFirstVisit = false }: I
               </div>
               <div className="flex items-start gap-3 p-3 rounded-lg bg-game-red/10 border border-game-red/30">
                 <Bomb className="w-5 h-5 text-game-red mt-0.5" />
-                <div>
-                  <p className="font-semibold font-sans text-sm">
-                    {t('info.weapons.explosive.name')}
-                  </p>
+                <div className="flex-1">
+                  <div className="flex items-center justify-between mb-1">
+                    <p className="font-semibold font-sans text-sm">
+                      {t('info.weapons.explosive.name')}
+                    </p>
+                    <Badge variant="outline" className="text-[10px] font-mono">
+                      40 {t('stats.ammo')}
+                    </Badge>
+                  </div>
                   <p className="text-xs text-muted-foreground font-sans">
                     {t('info.weapons.explosive.description')}
                   </p>
@@ -147,13 +159,41 @@ export function InfoDialog({ isOpen, onClose, onReady, isFirstVisit = false }: I
               </div>
               <div className="flex items-start gap-3 p-3 rounded-lg bg-game-yellow/10 border border-game-yellow/30">
                 <Swords className="w-5 h-5 text-game-yellow mt-0.5" />
-                <div>
-                  <p className="font-semibold font-sans text-sm">{t('info.weapons.melee.name')}</p>
+                <div className="flex-1">
+                  <div className="flex items-center justify-between mb-1">
+                    <p className="font-semibold font-sans text-sm">
+                      {t('info.weapons.melee.name')}
+                    </p>
+                    <Badge variant="outline" className="text-[10px] font-mono">
+                      5 {t('stats.ammo')}
+                    </Badge>
+                  </div>
                   <p className="text-xs text-muted-foreground font-sans">
                     {t('info.weapons.melee.description')}
                   </p>
                 </div>
               </div>
+            </div>
+          </div>
+
+          <div>
+            <h3 className="text-base sm:text-lg font-semibold font-sans mb-2 flex items-center gap-2">
+              <Package className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-game-yellow" />
+              {t('stats.ammo')}
+            </h3>
+            <div className="space-y-2 text-xs sm:text-sm text-muted-foreground font-sans leading-relaxed">
+              <p>
+                {t('info.ammo.perWeapon', {
+                  defaultValue:
+                    'Each weapon has its own ammunition pool. Laser has 35 rounds, Explosive has 70 rounds, and Melee has 5 strikes. Each shot consumes 1 ammo from the current weapon.',
+                })}
+              </p>
+              <p>
+                {t('info.ammo.regeneration', {
+                  defaultValue:
+                    "Ammo regenerates automatically at 10 per second, but only when you haven't fired for 3 seconds.",
+                })}
+              </p>
             </div>
           </div>
 
@@ -178,7 +218,7 @@ export function InfoDialog({ isOpen, onClose, onReady, isFirstVisit = false }: I
             <p className="text-xs text-muted-foreground font-sans text-center mb-4">
               {t('info.goodLuck')}
             </p>
-            {isFirstVisit && onReady && (
+            {isFirstVisit && onReady ? (
               <div className="flex justify-center">
                 <Button
                   onClick={onReady}
@@ -186,6 +226,16 @@ export function InfoDialog({ isOpen, onClose, onReady, isFirstVisit = false }: I
                   className="bg-game-green hover:bg-game-green/90 text-white font-semibold"
                 >
                   {t('info.imReady')}
+                </Button>
+              </div>
+            ) : (
+              <div className="flex justify-center">
+                <Button
+                  onClick={onClose}
+                  size="lg"
+                  className="bg-game-blue hover:bg-game-blue/90 text-white font-semibold"
+                >
+                  {t('info.iUnderstand')}
                 </Button>
               </div>
             )}
