@@ -467,10 +467,19 @@ export default class GameScene extends Phaser.Scene {
     });
     const explosionRadius = GameConfig.EXPLOSION_RADIUS;
     const chainRadius = GameConfig.CHAIN_RADIUS;
+
+    const CENTER_MULTIPLIER = 0.4;
+    const SOFTEN = 0.2;
+
     this.balls.getChildren().forEach((ball: any) => {
       const dist = Phaser.Math.Distance.Between(x, y, ball.x, ball.y);
+
       if (dist < explosionRadius) {
-        const health = this.damageBall(1.5, ball);
+        const nd = dist / explosionRadius;
+        const power = this.areaAttackPower || 1;
+        const multiplier = power * (CENTER_MULTIPLIER / (nd * nd + SOFTEN));
+
+        const health = this.damageBall(multiplier, ball);
         if (health <= 0) {
           const glow = ball.getData('glow');
           const inner = ball.getData('inner');
@@ -489,8 +498,11 @@ export default class GameScene extends Phaser.Scene {
           ball.setData('health', health);
         }
       } else if (dist < chainRadius) {
-        const chainDamage = GameConfig.CHAIN_DAMAGE;
-        const health = this.damageBall(chainDamage, ball);
+        const t = (dist - explosionRadius) / Math.max(1, chainRadius - explosionRadius);
+        const chainBase = GameConfig.CHAIN_DAMAGE;
+        const multiplier = chainBase * (1 - t);
+
+        const health = this.damageBall(multiplier, ball);
         if (health <= 0) {
           const glow = ball.getData('glow');
           const inner = ball.getData('inner');
@@ -519,13 +531,12 @@ export default class GameScene extends Phaser.Scene {
   }
 
   hitBall(laser: any, ball: any) {
+    const lastHit = ball.getData('lastHitTime') || 0;
+    if (this.time.now - lastHit < 150) return;
+    ball.setData('lastHitTime', this.time.now);
+
     const health = this.damageBall(1, ball);
     if (health <= 0) {
-      const laserCore = laser.getData('core');
-      const laserGlow = laser.getData('glow');
-      if (laserCore) laserCore.destroy();
-      if (laserGlow) laserGlow.destroy();
-      laser.destroy();
       const glow = ball.getData('glow');
       const inner = ball.getData('inner');
       const core = ball.getData('core');
@@ -549,7 +560,8 @@ export default class GameScene extends Phaser.Scene {
     let health = ball.getData('health') || 1;
     health -= damage;
 
-    const damageText = this.add.text(ball.x, ball.y - 30, `-${damage}`, {
+    const displayed = Math.round(damage * 10) / 10;
+    const damageText = this.add.text(ball.x, ball.y - 30, `-${displayed.toFixed(1)}`, {
       fontSize: '20px',
       color: '#ff6b6b',
       fontStyle: 'bold',
@@ -715,11 +727,24 @@ export default class GameScene extends Phaser.Scene {
 
     if (Math.floor(this.score / GameConfig.SCORE_PER_LEVEL) > this.level) {
       this.level += 1;
-      this.enemyHealth = Math.max(1, this.enemyHealth * 0.92);
+      this.enemyHealth = Math.max(1, this.enemyHealth * 1.1);
       this.hooks.setEnemyStats?.({
         health: this.enemyHealth,
         speed: GameConfig.ENEMY_BASE_SPEED,
         level: this.level,
+      });
+      const base = GameConfig.ENEMY_SPAWN_DELAY_MS;
+      const scale = 0.85;
+      const minDelay = 200;
+      const newDelay = Math.max(minDelay, Math.floor(base * Math.pow(scale, this.level)));
+      if (this.spawnEvent) {
+        this.spawnEvent.remove(false);
+      }
+      this.spawnEvent = this.time.addEvent({
+        delay: newDelay,
+        callback: this.spawnBall,
+        callbackScope: this,
+        loop: true,
       });
       if (!this.quizShown) {
         this.quizShown = true;

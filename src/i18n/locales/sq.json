@@ -50,17 +50,14 @@
     },
     "quiz": {
       "title": "Sistemi i Kuizit",
-<<<<<<< Updated upstream
-      "description": "Çdo 100 pikë, do të përballeni me një pyetje kuizi. Përgjigjuni saktë për të zgjedhur përmirësime të fuqishme duke përfshirë dëmtim të shtuar, restaurim shëndeti dhe aftësi të përmirësuara!"
-=======
       "description": "Çdo 150 pikë, do të përballeni me një pyetje kuizi. Përgjigjuni saktë për të zgjedhur përmirësime të fuqishme duke përfshirë dëmtim të shtuar, restaurim shëndeti dhe aftësi të përmirësuara!",
-      "description2": "Çdo 150 pikë, do të përballeni me një pyetje kuizi. Përgjigjuni saktë për të zgjedhur përmirësime të fuqishme duke përfshirë dëmtim të shtuar, restaurim shëndeti, rritje municionesh dhe aftësi të përmirësuara!"
+      "description2": "Çdo 150 pikë, do të përballeni me një pyetje kuizi. Përgjigjuni saktë për të zgjedhur përmirësime të fuqishme duke përfshirë dëmtim të shtuar, restaurim shëndeti, rritje municionesh dhe aftësi të përmirësuara!",
+      "levelNote": "rritet pas çdo pyetjeje."
     },
     "ammo": {
       "perWeapon": "Çdo armë ka rezervuarin e vet të municionit. Lazeri ka 35 plumba, Eksplozivi ka 40 plumba, dhe Goditësi ka 5 goditje. Çdo qitje konsumon 1 municion nga arma aktuale.",
       "description": "Çdo armë konsumon municion kur qëllon. Filloni me 100 municion dhe mund të mbani deri në 100.",
       "regeneration": "Municionet rigjenerojnë automatikisht me 10 për sekondë, por vetëm kur nuk keni qëlluar për 3 sekonda."
->>>>>>> Stashed changes
     },
     "goodLuck": "Fat të mirë, Komandant! 🎮",
     "imReady": "Jam gati",
@@ -102,7 +99,7 @@
     "speedBoost": "Rritje e Shpejtësisë",
     "speedBoostDesc": "Lëvizje më e shpejtë e kullës",
     "ammoBoost": "Rritje Municionesh",
-    "ammoBoostDesc": "Mbushje e plotë e armës aktuale",
+    "ammoBoostDesc": "Shton +5 Lazer, +7 Eksploziv, +1 Merrle (deri në maksimum)",
     "areaRadius": "Rreze Zone+",
     "areaRadiusDesc": "Zonë më e madhe sulmi",
     "areaPower": "Fuqi Zone+",
@@ -111,6 +108,6 @@
     "speed_boost": "Rritje e Shpejtësisë",
     "speed_boostDesc": "Lëvizje më e shpejtë e kullës",
     "ammo_boost": "Rritje Municionesh",
-    "ammo_boostDesc": "Mbushje e plotë e armës aktuale"
+    "ammo_boostDesc": "Shton +5 Lazer, +7 Eksploziv, +1 Merrle (deri në maksimum)"
   }
 }

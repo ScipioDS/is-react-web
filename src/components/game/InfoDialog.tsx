@@ -1,5 +1,5 @@
 import React from 'react';
-import { Info, Shield, Trophy, Zap, Bomb, Swords, Package } from 'lucide-react';
+import { Info, Shield, Trophy, Zap, Bomb, Swords, Package, BarChart } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -203,14 +203,16 @@ export function InfoDialog({ isOpen, onClose, onReady, isFirstVisit = false }: I
               {t('info.quiz.title')}
             </h3>
             <p className="text-xs sm:text-sm text-muted-foreground font-sans leading-relaxed">
-<<<<<<< Updated upstream
-              {t('info.quiz.description')}
-=======
               {t('info.quiz.description2', {
                 defaultValue:
                   "Every 150 points, you'll face a quiz question. Answer correctly to choose powerful upgrades including increased damage, health restoration, ammo boost, and improved abilities!",
               })}
->>>>>>> Stashed changes
+            </p>
+            <p className="text-xs sm:text-sm text-muted-foreground font-sans leading-relaxed mt-2 flex items-center gap-2">
+              <BarChart className="w-4 h-4 text-game-yellow" />
+              <span>
+                {t('stats.level')} {t('info.quiz.levelNote')}
+              </span>
             </p>
           </div>
 
