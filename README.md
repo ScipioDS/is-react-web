@@ -2,7 +2,6 @@
 
 A mobile-friendly tower defense game built with React, TypeScript, and Phaser 3. Features bilingual support (Macedonian and Albanian) with quiz-based gameplay.
 
- o
 - Node.js (v18 or higher)
 - npm or bun package manager
 
