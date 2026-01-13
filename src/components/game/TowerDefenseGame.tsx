@@ -178,9 +178,18 @@ const TowerDefenseGame = () => {
         break;
       case 'ammo_boost':
         if (scene) {
-          scene.laserAmmo = Math.min(scene.maxLaserAmmo, (scene.laserAmmo || 0) + 5);
-          scene.explosiveAmmo = Math.min(scene.maxExplosiveAmmo, (scene.explosiveAmmo || 0) + 7);
-          scene.meleeAmmo = Math.min(scene.maxMeleeAmmo, (scene.meleeAmmo || 0) + 1);
+          scene.laserAmmo = Math.min(
+            scene.maxLaserAmmo,
+            (scene.laserAmmo || 0) + GameConfig.AMMO_BOOST_LASER,
+          );
+          scene.explosiveAmmo = Math.min(
+            scene.maxExplosiveAmmo,
+            (scene.explosiveAmmo || 0) + GameConfig.AMMO_BOOST_EXPLOSIVE,
+          );
+          scene.meleeAmmo = Math.min(
+            scene.maxMeleeAmmo,
+            (scene.meleeAmmo || 0) + GameConfig.AMMO_BOOST_MELEE,
+          );
           setLaserAmmo(scene.laserAmmo);
           setExplosiveAmmo(scene.explosiveAmmo);
           setMeleeAmmo(scene.meleeAmmo);

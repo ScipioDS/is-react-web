@@ -468,8 +468,8 @@ export default class GameScene extends Phaser.Scene {
     const explosionRadius = GameConfig.EXPLOSION_RADIUS;
     const chainRadius = GameConfig.CHAIN_RADIUS;
 
-    const CENTER_MULTIPLIER = 0.4;
-    const SOFTEN = 0.2;
+    const CENTER_MULTIPLIER = GameConfig.EXPLOSION_CENTER_MULTIPLIER;
+    const SOFTEN = GameConfig.EXPLOSION_SOFTEN;
 
     this.balls.getChildren().forEach((ball: any) => {
       const dist = Phaser.Math.Distance.Between(x, y, ball.x, ball.y);
@@ -532,7 +532,7 @@ export default class GameScene extends Phaser.Scene {
 
   hitBall(laser: any, ball: any) {
     const lastHit = ball.getData('lastHitTime') || 0;
-    if (this.time.now - lastHit < 150) return;
+    if (this.time.now - lastHit < GameConfig.LASER_HIT_COOLDOWN_MS) return;
     ball.setData('lastHitTime', this.time.now);
 
     const health = this.damageBall(1, ball);

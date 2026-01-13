@@ -38,7 +38,7 @@ export const RewardPopup = ({ rewards, onSelect }: RewardPopupProps) => {
       label: t('rewards.areaPower'),
       description: t('rewards.areaPowerDesc'),
     },
-    // support keys used in game logic
+
     speedBoost: {
       icon: <Zap className="w-5 h-5" />,
       label: t('rewards.speedBoost'),
