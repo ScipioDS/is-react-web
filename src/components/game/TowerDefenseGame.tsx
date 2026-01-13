@@ -8,8 +8,14 @@ import { GameStats } from './GameStats';
 import { GameControls } from './GameControls';
 import { GameHeader } from './GameHeader';
 import Phaser from 'phaser';
+import { GameConfig } from '../../engine/consts/config';
+import GameScene, { EnemyStats, PlayerStats } from '@/engine/gameScene';
 import { Card, CardContent } from '@/components/ui/card';
+<<<<<<< Updated upstream
 import { QuizQuestion } from '@/components/game/QuizModels.ts';
+=======
+import { QuizQuestion, Weapon } from '@/components/game/types';
+>>>>>>> Stashed changes
 import { useTranslation } from 'react-i18next';
 import { quizzesAL } from '@/components/game/quiz/quizSQ.ts';
 import { quizzesMK } from '@/components/game/quiz/quizMK.ts';
@@ -35,6 +41,7 @@ const TowerDefenseGame = () => {
   }, [i18n.language]);
 
   const gameRef = useRef<HTMLDivElement | null>(null);
+<<<<<<< Updated upstream
   const phaserGameRef = useRef<any>(null);
   const [showQuiz, setShowQuiz] = React.useState(false);
   const [showReward, setShowReward] = React.useState(false);
@@ -58,6 +65,35 @@ const TowerDefenseGame = () => {
   const [enemyStats, setEnemyStats] = React.useState({
     health: 3,
     speed: 285,
+=======
+  const phaserGameRef = useRef<Phaser.Game | null>(null);
+  const [showQuiz, setShowQuiz] = useState(false);
+  const [showReward, setShowReward] = useState(false);
+  const [availableRewards, setAvailableRewards] = useState<string[]>([]);
+  const [paused, setPaused] = useState(false);
+  const [score, setScore] = useState(0);
+  const [health, setHealth] = useState(10);
+  const [gameOver, setGameOver] = useState(false);
+  const [laserAmmo, setLaserAmmo] = useState<number>(GameConfig.MAX_LASER_AMMO);
+  const [explosiveAmmo, setExplosiveAmmo] = useState<number>(GameConfig.MAX_EXPLOSIVE_AMMO);
+  const [meleeAmmo, setMeleeAmmo] = useState<number>(GameConfig.MAX_MELEE_AMMO);
+  const maxLaserAmmo = GameConfig.MAX_LASER_AMMO;
+  const maxExplosiveAmmo = GameConfig.MAX_EXPLOSIVE_AMMO;
+  const maxMeleeAmmo = GameConfig.MAX_MELEE_AMMO;
+  const [currentWeapon, setCurrentWeapon] = useState<Weapon>('laser');
+  const [showWeaponWheel, setShowWeaponWheel] = useState(false);
+  const [showInfo, setShowInfo] = useState(false);
+  const [isFirstVisit, setIsFirstVisit] = useState(false);
+  const [playerStats, setPlayerStats] = useState<PlayerStats>({
+    turretStrength: GameConfig.STARTING_TURRET_STRENGTH,
+    areaAttackRadius: GameConfig.STARTING_AREA_ATTACK_RADIUS,
+    areaAttackPower: GameConfig.STARTING_AREA_ATTACK_POWER,
+    cameraSpeed: GameConfig.STARTING_CAMERA_SPEED,
+  });
+  const [enemyStats, setEnemyStats] = useState<EnemyStats>({
+    health: GameConfig.STARTING_ENEMY_HEALTH,
+    speed: GameConfig.ENEMY_BASE_SPEED,
+>>>>>>> Stashed changes
     level: 0,
   });
 
@@ -75,7 +111,7 @@ const TowerDefenseGame = () => {
     setShowInfo(false);
     setIsFirstVisit(false);
     if (phaserGameRef.current) {
-      const scene = phaserGameRef.current.scene.keys['GameScene'];
+      const scene = phaserGameRef.current.scene.keys['GameScene'] as GameScene;
       scene.scene.resume();
       setPaused(false);
     }
@@ -83,7 +119,7 @@ const TowerDefenseGame = () => {
 
   const togglePause = () => {
     if (!phaserGameRef.current) return;
-    const scene = phaserGameRef.current.scene.keys['GameScene'];
+    const scene = phaserGameRef.current.scene.keys['GameScene'] as GameScene;
     if (paused) {
       scene.scene.resume();
       setPaused(false);
@@ -95,7 +131,7 @@ const TowerDefenseGame = () => {
 
   const showQuizPopup = () => {
     if (!phaserGameRef.current) return;
-    const scene = phaserGameRef.current.scene.keys['GameScene'];
+    const scene = phaserGameRef.current.scene.keys['GameScene'] as GameScene;
     scene.scene.pause();
     setPaused(true);
     setShowQuiz(true);
@@ -104,7 +140,7 @@ const TowerDefenseGame = () => {
   const handleQuizAnswer = (correct: boolean) => {
     setShowQuiz(false);
     if (!phaserGameRef.current) return;
-    const scene = phaserGameRef.current.scene.keys['GameScene'];
+    const scene = phaserGameRef.current.scene.keys['GameScene'] as GameScene;
 
     if (currentQuizIndex < quizQuestions.length - 1) {
       setCurrentQuizIndex(currentQuizIndex + 1);
@@ -135,7 +171,7 @@ const TowerDefenseGame = () => {
 
   const handleRewardSelect = (reward: string) => {
     if (!phaserGameRef.current) return;
-    const scene = phaserGameRef.current.scene.keys['GameScene'];
+    const scene = phaserGameRef.current.scene.keys['GameScene'] as GameScene;
     switch (reward) {
       case 'power_attack':
         if (scene) {
@@ -180,6 +216,7 @@ const TowerDefenseGame = () => {
   };
 
   useEffect(() => {
+<<<<<<< Updated upstream
     class GameScene extends Phaser.Scene {
       turretBarrel: any;
       balls: any;
@@ -827,6 +864,21 @@ const TowerDefenseGame = () => {
         }
       }
     }
+=======
+    const gameScene = new GameScene({
+      setScore: (score: number) => setScore(score),
+      setLaserAmmo: (amt: number) => setLaserAmmo(amt),
+      setExplosiveAmmo: (amt: number) => setExplosiveAmmo(amt),
+      setMeleeAmmo: (amt: number) => setMeleeAmmo(amt),
+      setHealth: (h: number) => setHealth(h),
+      setGameOver: (v: boolean) => setGameOver(v),
+      setEnemyStats: (s) => setEnemyStats(s),
+      setPlayerStats: (s) => setPlayerStats(s),
+      showQuizPopup,
+      setShowWeaponWheel: (v: boolean) => setShowWeaponWheel(v),
+      setPaused: (v: boolean) => setPaused(v),
+    });
+>>>>>>> Stashed changes
 
     const config = {
       type: Phaser.WEBGL,
@@ -834,7 +886,7 @@ const TowerDefenseGame = () => {
       height: 600,
       parent: gameRef.current || undefined,
       physics: { default: 'arcade', arcade: { debug: false } },
-      scene: [GameScene],
+      scene: [gameScene],
       backgroundColor: '#0f1419',
       scale: {
         mode: Phaser.Scale.FIT,
@@ -865,30 +917,47 @@ const TowerDefenseGame = () => {
 
   const handleRestart = () => {
     if (phaserGameRef.current) {
-      const scene = phaserGameRef.current.scene.keys['GameScene'];
+      const scene = phaserGameRef.current.scene.keys['GameScene'] as GameScene;
       scene.health = 10;
       scene.score = 0;
       scene.level = 0;
+<<<<<<< Updated upstream
       scene.enemyHealth = 3;
       scene.turretStrength = 1;
       scene.areaAttackRadius = 80;
       scene.areaAttackPower = 1;
       scene.cameraSpeed = 300;
+=======
+      scene.laserAmmo = GameConfig.MAX_LASER_AMMO;
+      scene.explosiveAmmo = GameConfig.MAX_EXPLOSIVE_AMMO;
+      scene.meleeAmmo = GameConfig.MAX_MELEE_AMMO;
+      scene.enemyHealth = GameConfig.STARTING_ENEMY_HEALTH;
+      scene.turretStrength = GameConfig.STARTING_TURRET_STRENGTH;
+      scene.areaAttackRadius = GameConfig.STARTING_AREA_ATTACK_RADIUS;
+      scene.areaAttackPower = GameConfig.STARTING_AREA_ATTACK_POWER;
+      scene.cameraSpeed = GameConfig.STARTING_CAMERA_SPEED;
+>>>>>>> Stashed changes
       scene.quizShown = false;
       scene.scene.restart();
       setPaused(false);
       setScore(0);
       setHealth(10);
+<<<<<<< Updated upstream
+=======
+      setLaserAmmo(GameConfig.MAX_LASER_AMMO);
+      setExplosiveAmmo(GameConfig.MAX_EXPLOSIVE_AMMO);
+      setMeleeAmmo(GameConfig.MAX_MELEE_AMMO);
+>>>>>>> Stashed changes
       setGameOver(false);
       setPlayerStats({
-        turretStrength: 1,
-        areaAttackRadius: 80,
-        areaAttackPower: 1,
-        cameraSpeed: 300,
+        turretStrength: GameConfig.STARTING_TURRET_STRENGTH,
+        areaAttackRadius: GameConfig.STARTING_AREA_ATTACK_RADIUS,
+        areaAttackPower: GameConfig.STARTING_AREA_ATTACK_POWER,
+        cameraSpeed: GameConfig.STARTING_CAMERA_SPEED,
       });
       setEnemyStats({
-        health: 3,
-        speed: 285,
+        health: GameConfig.STARTING_ENEMY_HEALTH,
+        speed: GameConfig.ENEMY_BASE_SPEED,
         level: 0,
       });
     }
@@ -923,7 +992,7 @@ const TowerDefenseGame = () => {
               onWeaponChange={(weapon) => {
                 setCurrentWeapon(weapon);
                 if (phaserGameRef.current) {
-                  const scene = phaserGameRef.current.scene.keys['GameScene'];
+                  const scene = phaserGameRef.current.scene.keys['GameScene'] as GameScene;
                   scene.currentWeapon = weapon;
                 }
               }}
@@ -1079,7 +1148,7 @@ const TowerDefenseGame = () => {
                   onWeaponSelect={(weapon) => {
                     setCurrentWeapon(weapon);
                     if (phaserGameRef.current) {
-                      const scene = phaserGameRef.current.scene.keys['GameScene'];
+                      const scene = phaserGameRef.current.scene.keys['GameScene'] as GameScene;
                       scene.currentWeapon = weapon;
                     }
                   }}
@@ -1093,7 +1162,7 @@ const TowerDefenseGame = () => {
               onRestart={handleRestart}
               onMobileMove={(direction, isPressed) => {
                 if (phaserGameRef.current) {
-                  const scene = phaserGameRef.current.scene.keys['GameScene'];
+                  const scene = phaserGameRef.current.scene.keys['GameScene'] as GameScene;
                   if (scene && scene.mobileControls) {
                     scene.mobileControls[direction] = isPressed;
                   }

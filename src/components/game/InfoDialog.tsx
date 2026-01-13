@@ -163,7 +163,14 @@ export function InfoDialog({ isOpen, onClose, onReady, isFirstVisit = false }: I
               {t('info.quiz.title')}
             </h3>
             <p className="text-xs sm:text-sm text-muted-foreground font-sans leading-relaxed">
+<<<<<<< Updated upstream
               {t('info.quiz.description')}
+=======
+              {t('info.quiz.description2', {
+                defaultValue:
+                  "Every 150 points, you'll face a quiz question. Answer correctly to choose powerful upgrades including increased damage, health restoration, ammo boost, and improved abilities!",
+              })}
+>>>>>>> Stashed changes
             </p>
           </div>
 
